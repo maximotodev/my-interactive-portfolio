@@ -10,10 +10,14 @@ ENV PYTHONUNBUFFERED 1
 # 3. Set the working directory
 WORKDIR /app
 
-# 4. Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends gcc build-essential
-
 # --- THIS IS THE CRITICAL CHANGE ---
+# 4. Install system dependencies, including pkg-config and the C-library for secp256k1
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    build-essential \
+    pkg-config \
+    libsecp256k1-dev
+
 # 5. Copy ONLY the requirements file from the backend directory first
 COPY backend/requirements.txt .
 
@@ -27,5 +31,4 @@ COPY backend/ .
 EXPOSE 7860
 
 # 9. The command to run when the container starts.
-#    Note that the paths inside the container are now flat.
 CMD ["python", "-m", "gunicorn", "--config", "gunicorn.conf.py", "--bind", "0.0.0.0:7860", "portfolio_project.wsgi"]
