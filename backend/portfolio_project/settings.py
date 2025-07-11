@@ -27,9 +27,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
-
-
+# This logic now checks for the automatically provided hostname AND our manually set one.
+if IS_RENDER:
+    render_hostname = os.getenv('RENDER_EXTERNAL_HOSTNAME')
+    manual_hostname = os.getenv('ALLOWED_HOST')
+    
+    ALLOWED_HOSTS = []
+    if render_hostname:
+        ALLOWED_HOSTS.append(render_hostname)
+    if manual_hostname:
+        ALLOWED_HOSTS.append(manual_hostname)
+else:
+    ALLOWED_HOSTS = ['127.0.0.1', 'localhost'] # Also good practice to add localhost for local testing
 # Application definition
 
 INSTALLED_APPS = [
