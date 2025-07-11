@@ -1,0 +1,110 @@
+[
+{
+  "model": "api.certification",
+  "pk": 1,
+  "fields": {
+    "name": "Google IT Automation with Python",
+    "issuing_organization": "Coursera",
+    "credential_url": "https://www.credly.com/go/yvtuplTu",
+    "date_issued": "2025-02-13"
+  }
+},
+{
+  "model": "api.certification",
+  "pk": 2,
+  "fields": {
+    "name": "Google AI Essentials",
+    "issuing_organization": "Coursera",
+    "credential_url": "https://www.coursera.org/verify/JFHTU7CWBPSP/",
+    "date_issued": "2025-03-05"
+  }
+},
+{
+  "model": "api.certification",
+  "pk": 3,
+  "fields": {
+    "name": "Meta Back-End Development",
+    "issuing_organization": "Coursera",
+    "credential_url": "https://www.coursera.org/verify/CLX29DGQ9THH",
+    "date_issued": "2023-10-03"
+  }
+},
+{
+  "model": "api.certification",
+  "pk": 4,
+  "fields": {
+    "name": "Linux and SQL",
+    "issuing_organization": "Coursera",
+    "credential_url": "https://coursera.org/verify/Z85DMG59FUN5",
+    "date_issued": "2025-06-30"
+  }
+},
+{
+  "model": "api.certification",
+  "pk": 5,
+  "fields": {
+    "name": "The Frontend Developer Career Path",
+    "issuing_organization": "Scrimba",
+    "credential_url": "https://scrimba.com/certificate/uKLBwESL/gfrontend",
+    "date_issued": "2023-05-23"
+  }
+},
+{
+  "model": "api.certification",
+  "pk": 6,
+  "fields": {
+    "name": "Configuration Management and the Cloud",
+    "issuing_organization": "Coursera",
+    "credential_url": "https://coursera.org/verify/OEYQ6UYY3SUN/",
+    "date_issued": "2025-02-09"
+  }
+},
+{
+  "model": "api.project",
+  "pk": 1,
+  "fields": {
+    "title": "Tribev2",
+    "description": "A modern social media platform designed to connect communities and foster interaction. Built with a scalable architecture to handle real-time updates and user-generated content.",
+    "technologies": "React, Next.js, Firebase, TailwindCSS, Vercel",
+    "repository_url": "https://github.com/maximotodev/tribev2",
+    "live_url": "https://tribev2.vercel.app/",
+    "image": "project_images/tribev2.png"
+  }
+},
+{
+  "model": "api.project",
+  "pk": 2,
+  "fields": {
+    "title": "Bitcoin Chatbot",
+    "description": "An interactive chatbot designed to provide real-time Bitcoin information, price tracking, market trends, and user-specific cryptocurrency insights. It leverages the Gemini API for accurate and up-to-date data.",
+    "technologies": "Flask, React, Gemini API, WebSocket, JavaScript, HTML, CSS",
+    "repository_url": "https://github.com/maximotodev/bitcoin-chatbot",
+    "live_url": "https://bitcoin-chatbot.netlify.app/",
+    "image": "project_images/Screen_Shot_2025-07-10_at_9.10.59_PM.png"
+  }
+},
+{
+  "model": "api.project",
+  "pk": 3,
+  "fields": {
+    "title": "Gemini Quest",
+    "description": "Gemini Quest is an interactive trivia quiz web application powered by the Gemini API, built with Flask for the backend and React with Vite for the frontend. The app is designed to engage users in a dynamic, quiz-based experience, where they can test their knowledge across various categories.",
+    "technologies": "React, Vite, Flask",
+    "repository_url": "https://github.com/maximotodev/gemini-quest",
+    "live_url": "https://gemini-quest.netlify.app/",
+    "image": "project_images/Screen-Shot-2025-06-11-at-12-46-24-PM.png"
+  }
+},
+{
+  "model": "api.project",
+  "pk": 4,
+  "fields": {
+    "title": "Mia Reynolds",
+    "description": "Portfolio Website for Mia Reynolds",
+    "technologies": "React, Next.js, Firebase, TailwindCSS, Vercel",
+    "repository_url": "https://github.com/maximotodev/miareynolds",
+    "live_url": "https://miareynolds.vercel.app/",
+    "image": "project_images/Screen_Shot_2025-07-10_at_9.14.56_PM.png"
+  }
+}
+]
