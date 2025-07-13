@@ -5,7 +5,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
 
-os.environ.setdefault('BITCOINLIB_DATADIR', '/app/bitcoinlib_data')
+# os.environ.setdefault('BITCOINLIB_DATADIR', '/app/bitcoinlib_data')
 # Load environment variables from .env file
 load_dotenv()
 
@@ -33,16 +33,17 @@ DEBUG = not IS_PRODUCTION
 
 # Define allowed hosts for security
 if IS_PRODUCTION:
-    # On Render, the RENDER_EXTERNAL_HOSTNAME is automatically provided
     render_hostname = os.getenv('RENDER_EXTERNAL_HOSTNAME')
+    # We will set 'ALLOWED_HOST_MANUAL' in Render's environment variables
+    manual_hostname = os.getenv('ALLOWED_HOST_MANUAL')
+    
+    ALLOWED_HOSTS = []
     if render_hostname:
-        ALLOWED_HOSTS = [render_hostname]
-    else:
-        ALLOWED_HOSTS = [] # Should not happen, but a safe default
+        ALLOWED_HOSTS.append(render_hostname)
+    if manual_hostname:
+        ALLOWED_HOSTS.append(manual_hostname)
 else:
-    # For local development, allow localhost and 127.0.0.1
     ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
-
 # Configure Cross-Origin Resource Sharing (CORS)
 # This allows our React frontend to make API calls to our Django backend.
 if IS_PRODUCTION:
