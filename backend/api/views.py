@@ -16,8 +16,8 @@ import requests
 # from sklearn.feature_extraction.text import TfidfVectorizer
 from django.db.models import Q # Add Q object for complex lookups
 import re # Add regex module for splitting query
-from sklearn.metrics.pairwise import cosine_similarity
-from sentence_transformers import SentenceTransformer
+# from sklearn.metrics.pairwise import cosine_similarity
+# from sentence_transformers import SentenceTransformer
 
 # --- FINAL, CORRECT NOSTR LIBRARY BASED ON DOCUMENTATION ---
 from pynostr.relay_manager import RelayManager
@@ -44,17 +44,17 @@ SENTENCE_MODEL_NAME = 'all-MiniLM-L6-v2'
 
 # This dictionary will act as a simple in-memory cache for our AI model.
 # This prevents reloading the ~80MB model from disk on every single API call.
-model_cache = {}
+# model_cache = {}
 
-def get_sentence_transformer_model():
-    """
-    Loads the Sentence Transformer model from cache or from disk if not loaded.
-    """
-    if SENTENCE_MODEL_NAME not in model_cache:
-        print(f"Loading sentence transformer model: {SENTENCE_MODEL_NAME}...")
-        model_cache[SENTENCE_MODEL_NAME] = SentenceTransformer(SENTENCE_MODEL_NAME)
-        print("Model loaded successfully.")
-    return model_cache[SENTENCE_MODEL_NAME]
+# def get_sentence_transformer_model():
+#     """
+#     Loads the Sentence Transformer model from cache or from disk if not loaded.
+#     """
+#     if SENTENCE_MODEL_NAME not in model_cache:
+#         print(f"Loading sentence transformer model: {SENTENCE_MODEL_NAME}...")
+#         model_cache[SENTENCE_MODEL_NAME] = SentenceTransformer(SENTENCE_MODEL_NAME)
+#         print("Model loaded successfully.")
+#     return model_cache[SENTENCE_MODEL_NAME]
 # ==============================================================================
 # HELPER & SERVICE FUNCTIONS
 # ==============================================================================
@@ -260,62 +260,69 @@ def latest_note(request):
 @api_view(['POST'])
 def skill_match_view(request):
     """
-    Uses a HYBRID approach.
-    1. Filters projects by keyword in the 'technologies' field.
-    2. Ranks the results semantically. Guarantees that keyword matches appear.
-    3. Falls back to full semantic search if no keywords match.
+    AI Skill Matcher is temporarily disabled for deployment on the free tier
+    due to memory constraints. It returns an empty list to prevent errors.
     """
-    SIMILARITY_THRESHOLD = 0.30  # Threshold for the fallback semantic search
+    print("INFO: AI Skill Matcher endpoint called, returning empty list (feature disabled).")
+    # By returning an empty list, the frontend will correctly show "No projects match your query."
+    return Response([])
+    # """
+    # Uses a HYBRID approach.
+    # 1. Filters projects by keyword in the 'technologies' field.
+    # 2. Ranks the results semantically. Guarantees that keyword matches appear.
+    # 3. Falls back to full semantic search if no keywords match.
+    # """
+    # SIMILARITY_THRESHOLD = 0.30  # Threshold for the fallback semantic search
 
-    query = request.data.get('query', '').strip()
-    if not query:
-        return Response([])
+    # query = request.data.get('query', '').strip()
+    # if not query:
+    #     return Response([])
 
-    keywords = [word for word in re.split(r'[,\s]+', query) if word]
+    # keywords = [word for word in re.split(r'[,\s]+', query) if word]
     
-    keyword_query = Q()
-    for keyword in keywords:
-        keyword_query |= Q(technologies__icontains=keyword) | Q(description__icontains=keyword) | Q(title__icontains=keyword)
+    # keyword_query = Q()
+    # for keyword in keywords:
+    #     keyword_query |= Q(technologies__icontains=keyword) | Q(description__icontains=keyword) | Q(title__icontains=keyword)
     
-    keyword_matched_projects = Project.objects.filter(keyword_query).distinct()
+    # keyword_matched_projects = Project.objects.filter(keyword_query).distinct()
 
-    projects_to_process = []
-    is_keyword_search = False
+    # projects_to_process = []
+    # is_keyword_search = False
 
-    if keyword_matched_projects.exists():
-        print(f"[DEBUG] Found {keyword_matched_projects.count()} projects via keyword match.")
-        projects_to_process = keyword_matched_projects
-        is_keyword_search = True
-    else:
-        print("[DEBUG] No keyword match. Falling back to full semantic search.")
-        projects_to_process = Project.objects.all()
+    # if keyword_matched_projects.exists():
+    #     print(f"[DEBUG] Found {keyword_matched_projects.count()} projects via keyword match.")
+    #     projects_to_process = keyword_matched_projects
+    #     is_keyword_search = True
+    # else:
+    #     print("[DEBUG] No keyword match. Falling back to full semantic search.")
+    #     projects_to_process = Project.objects.all()
 
-    if not projects_to_process:
-        return Response([])
+    # if not projects_to_process:
+    #     return Response([])
 
-    project_docs = [f"{p.title}. {p.description}. Technologies used: {p.technologies}" for p in projects_to_process]
-    project_ids = [p.id for p in projects_to_process]
+    # project_docs = [f"{p.title}. {p.description}. Technologies used: {p.technologies}" for p in projects_to_process]
+    # project_ids = [p.id for p in projects_to_process]
 
-    try:
-        model = get_sentence_transformer_model()
-        project_embeddings = model.encode(project_docs)
-        query_embedding = model.encode(query)
+    # try:
+    #     model = get_sentence_transformer_model()
+    #     project_embeddings = model.encode(project_docs)
+    #     query_embedding = model.encode(query)
 
-        cosine_scores = cosine_similarity([query_embedding], project_embeddings).flatten()
+    #     cosine_scores = cosine_similarity([query_embedding], project_embeddings).flatten()
 
-        matched_projects = []
-        for i, score in enumerate(cosine_scores):
-            # --- NEW LOGIC ---
-            # If this was a keyword search, we include all results regardless of score,
-            # as they are explicitly relevant.
-            # If it was a fallback semantic search, we apply the threshold.
-            if is_keyword_search or score >= SIMILARITY_THRESHOLD:
-                matched_projects.append({'id': project_ids[i], 'score': float(score)})
+    #     matched_projects = []
+    #     for i, score in enumerate(cosine_scores):
+    #         # --- NEW LOGIC ---
+    #         # If this was a keyword search, we include all results regardless of score,
+    #         # as they are explicitly relevant.
+    #         # If it was a fallback semantic search, we apply the threshold.
+    #         if is_keyword_search or score >= SIMILARITY_THRESHOLD:
+    #             matched_projects.append({'id': project_ids[i], 'score': float(score)})
         
-        ranked_matches = sorted(matched_projects, key=lambda p: p['score'], reverse=True)
+    #     ranked_matches = sorted(matched_projects, key=lambda p: p['score'], reverse=True)
         
-        return Response(ranked_matches)
+    #     return Response(ranked_matches)
         
-    except Exception as e:
-        print(f"Error during hybrid skill matching: {e}")
-        return Response({'error': 'An error occurred during skill analysis.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    # except Exception as e:
+    #     print(f"Error during hybrid skill matching: {e}")
+    #     return Response({'error': 'An error occurred during skill analysis.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
