@@ -27,30 +27,30 @@ IS_PRODUCTION = os.getenv('IS_RENDER', 'False') == 'True'
 DEBUG = not IS_PRODUCTION
 
 
-# ==============================================================================
+# # ==============================================================================
 # HOSTS & CORS CONFIGURATION
 # ==============================================================================
 
 # Define allowed hosts for security
 if IS_PRODUCTION:
+    # On Render, the RENDER_EXTERNAL_HOSTNAME is automatically provided.
+    # This is the most reliable way to get the production hostname.
     render_hostname = os.getenv('RENDER_EXTERNAL_HOSTNAME')
-    # This is the new variable we just added on Render
-    manual_hostname = os.getenv('ALLOWED_HOST')
-    
-    ALLOWED_HOSTS = ['my-portfolio-backend-z88p.onrender.com']
     if render_hostname:
-        ALLOWED_HOSTS.append(render_hostname)
-    # Add our manually set host if it exists, preventing duplicates
-    if manual_hostname and manual_hostname not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append(manual_hostname)
+        ALLOWED_HOSTS = [render_hostname]
+    else:
+        # A fallback in case the variable isn't set, though it should be.
+        ALLOWED_HOSTS = []
 else:
     # For local development
     ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 # Configure Cross-Origin Resource Sharing (CORS)
 if IS_PRODUCTION:
+    # Get the live frontend URL from the environment variables on Render
     frontend_url = os.getenv('FRONTEND_URL')
     if frontend_url:
+        # This is the list of origins that are allowed to make API calls
         CORS_ALLOWED_ORIGINS = [frontend_url]
     else:
         CORS_ALLOWED_ORIGINS = []
@@ -60,7 +60,6 @@ else:
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
-
 # ==============================================================================
 # DJANGO APPLICATIONS AND MIDDLEWARE
 # ==============================================================================
