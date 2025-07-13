@@ -18,17 +18,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
     libsecp256k1-dev
 
-# 5. Copy ONLY the requirements file from the backend directory first
+# 5. Create the directory for bitcoinlib data within our app's working dir
+RUN mkdir -p /app/bitcoinlib_data
+
+# 6. Copy ONLY the requirements file...
 COPY backend/requirements.txt .
 
-# 6. Install Python packages
+# 7. Install Python packages
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 7. Copy the entire backend directory into the container
+# 8. Copy the entire backend directory...
 COPY backend/ .
 
-# 8. The port Hugging Face Spaces expects the app to run on
+# 9. The port Hugging Face Spaces expects the app to run on
 EXPOSE 7860
 
-# 9. The command to run when the container starts.
+# 10. The command to run when the container starts.
 CMD ["python", "-m", "gunicorn", "--config", "gunicorn.conf.py", "--bind", "0.0.0.0:7860", "portfolio_project.wsgi"]

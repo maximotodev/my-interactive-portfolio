@@ -5,6 +5,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
 
+os.environ.setdefault('BITCOINLIB_DATADIR', '/app/bitcoinlib_data')
 # Load environment variables from .env file
 load_dotenv()
 
