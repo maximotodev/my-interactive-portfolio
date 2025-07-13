@@ -37,7 +37,7 @@ if IS_PRODUCTION:
     # This is the new variable we just added on Render
     manual_hostname = os.getenv('ALLOWED_HOST')
     
-    ALLOWED_HOSTS = []
+    ALLOWED_HOSTS = ['my-portfolio-backend-z88p.onrender.com']
     if render_hostname:
         ALLOWED_HOSTS.append(render_hostname)
     # Add our manually set host if it exists, preventing duplicates
