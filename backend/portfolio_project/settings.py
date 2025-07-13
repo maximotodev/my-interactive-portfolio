@@ -16,41 +16,50 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # CORE SETTINGS
 # ==============================================================================
 
-# Get the secret key from the environment
+# Get the secret key from the environment. This is critical for security.
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-# Determine if we are in the Render production environment
-# Render automatically sets the 'IS_RENDER' variable to 'True'
+# Determine if we are in the Render production environment.
+# Render automatically sets the 'IS_RENDER' variable to 'True'.
 IS_PRODUCTION = os.getenv('IS_RENDER', 'False') == 'True'
 
-# DEBUG is True for local development and False for production
+# DEBUG is True for local development and ALWAYS False for production.
 DEBUG = not IS_PRODUCTION
 
 
 # ==============================================================================
-# HOSTS & CORS CONFIGURATION
+# HOSTS, CORS, AND CSRF CONFIGURATION
 # ==============================================================================
 
-# Define allowed hosts for security
+# Define allowed hosts for security.
 if IS_PRODUCTION:
-    # On Render, the RENDER_EXTERNAL_HOSTNAME is automatically provided
+    # On Render, get the hostname from the env var it provides.
     render_hostname = os.getenv('RENDER_EXTERNAL_HOSTNAME')
-    ALLOWED_HOSTS = [render_hostname] if render_hostname else []
+    # Use the manual host from our env vars as a reliable backup.
+    manual_hostname = os.getenv('ALLOWED_HOST')
+
+    ALLOWED_HOSTS = []
+    if render_hostname:
+        ALLOWED_HOSTS.append(render_hostname)
+    if manual_hostname:
+        ALLOWED_HOSTS.append(manual_hostname)
 else:
-    # For local development
+    # For local development, only allow these.
     ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
-# Configure Cross-Origin Resource Sharing (CORS)
-if IS_PRODUCTION:
-    # For production, get the live frontend URL from an environment variable on Render
-    frontend_url = os.getenv('FRONTEND_URL')
-    CORS_ALLOWED_ORIGINS = [frontend_url] if frontend_url else []
-else:
-    # For local development, allow the Vite server's address
-    CORS_ALLOWED_ORIGINS = [
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ]
+# Configure Cross-Origin Resource Sharing (CORS) and Cross-Site Request Forgery (CSRF).
+# This tells our backend which frontend domains are allowed to talk to it.
+frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:5173') # Default for local dev
+
+CORS_ALLOWED_ORIGINS = [
+    # Add your Vercel frontend URL from the environment variable.
+    frontend_url,
+    # Also keep the local development URLs for convenience.
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+# For security, tell Django that it can trust POST/PUT requests from our frontend domain.
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 
 
 # ==============================================================================
@@ -63,8 +72,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    # WhiteNoise is added here for serving static files efficiently
-    'whitenoise.runserver_nostatic',
+    'whitenoise.runserver_nostatic', # For serving static files in development
     'django.contrib.staticfiles',
     # 3rd Party Apps
     'rest_framework',
@@ -75,11 +83,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    # WhiteNoise Middleware should be placed right after the security middleware
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # Should be right after security
     'django.contrib.sessions.middleware.SessionMiddleware',
-    # CORS middleware should be placed high up
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware', # Placed high up
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -98,7 +104,7 @@ WSGI_APPLICATION = 'portfolio_project.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config(
         default=os.getenv('DATABASE_URL'),
-        conn_max_age=600 # Keep connections alive for 10 minutes
+        conn_max_age=600
     )
 }
 
