@@ -33,31 +33,31 @@ DEBUG = not IS_PRODUCTION
 
 # Define allowed hosts for security
 if IS_PRODUCTION:
+    # On Render, the RENDER_EXTERNAL_HOSTNAME is automatically provided.
+    # This is the most reliable way to get the production hostname.
     render_hostname = os.getenv('RENDER_EXTERNAL_HOSTNAME')
-    # We will set 'ALLOWED_HOST_MANUAL' in Render's environment variables
-    manual_hostname = os.getenv('ALLOWED_HOST_MANUAL')
-    
-    ALLOWED_HOSTS = []
     if render_hostname:
-        ALLOWED_HOSTS.append(render_hostname)
-    if manual_hostname:
-        ALLOWED_HOSTS.append(manual_hostname)
+        ALLOWED_HOSTS = [render_hostname]
+    else:
+        # A fallback in case the variable isn't set for some reason
+        ALLOWED_HOSTS = []
 else:
+    # For local development
     ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+
 # Configure Cross-Origin Resource Sharing (CORS)
-# This allows our React frontend to make API calls to our Django backend.
 if IS_PRODUCTION:
-    # For production, we get the frontend URL from an environment variable
-    CORS_ALLOWED_ORIGINS = [
-        os.getenv('FRONTEND_URL', '') # e.g., 'https://my-portfolio.vercel.app'
-    ]
+    frontend_url = os.getenv('FRONTEND_URL')
+    if frontend_url:
+        CORS_ALLOWED_ORIGINS = [frontend_url]
+    else:
+        CORS_ALLOWED_ORIGINS = []
 else:
-    # For local development, allow the Vite server's address
+    # For local development
     CORS_ALLOWED_ORIGINS = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ]
-
 
 # ==============================================================================
 # DJANGO APPLICATIONS AND MIDDLEWARE
