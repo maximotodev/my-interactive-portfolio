@@ -33,14 +33,16 @@ DEBUG = not IS_PRODUCTION
 
 # Define allowed hosts for security
 if IS_PRODUCTION:
-    # On Render, the RENDER_EXTERNAL_HOSTNAME is automatically provided.
-    # This is the most reliable way to get the production hostname.
     render_hostname = os.getenv('RENDER_EXTERNAL_HOSTNAME')
+    # This is the new variable we just added on Render
+    manual_hostname = os.getenv('ALLOWED_HOST')
+    
+    ALLOWED_HOSTS = []
     if render_hostname:
-        ALLOWED_HOSTS = [render_hostname]
-    else:
-        # A fallback in case the variable isn't set for some reason
-        ALLOWED_HOSTS = []
+        ALLOWED_HOSTS.append(render_hostname)
+    # Add our manually set host if it exists, preventing duplicates
+    if manual_hostname and manual_hostname not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(manual_hostname)
 else:
     # For local development
     ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
