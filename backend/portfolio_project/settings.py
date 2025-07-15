@@ -16,50 +16,57 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # CORE SETTINGS
 # ==============================================================================
 
-# Get the secret key from the environment. This is critical for security.
 SECRET_KEY = os.getenv('SECRET_KEY')
 
-# Determine if we are in the Render production environment.
-# Render automatically sets the 'IS_RENDER' variable to 'True'.
+# Determine if we are in the Render production environment
 IS_PRODUCTION = os.getenv('IS_RENDER', 'False') == 'True'
 
-# DEBUG is True for local development and ALWAYS False for production.
+# DEBUG is True for local development and ALWAYS False for production
 DEBUG = not IS_PRODUCTION
 
 
 # ==============================================================================
-# HOSTS, CORS, AND CSRF CONFIGURATION
+# HOSTS, CORS, AND SECURITY CONFIGURATION
 # ==============================================================================
 
-# Define allowed hosts for security.
+ALLOWED_HOSTS = []
 if IS_PRODUCTION:
-    # On Render, get the hostname from the env var it provides.
     render_hostname = os.getenv('RENDER_EXTERNAL_HOSTNAME')
-    # Use the manual host from our env vars as a reliable backup.
-    manual_hostname = os.getenv('ALLOWED_HOST')
-
-    ALLOWED_HOSTS = []
     if render_hostname:
         ALLOWED_HOSTS.append(render_hostname)
-    if manual_hostname:
-        ALLOWED_HOSTS.append(manual_hostname)
 else:
-    # For local development, only allow these.
     ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
-# Configure Cross-Origin Resource Sharing (CORS) and Cross-Site Request Forgery (CSRF).
-# This tells our backend which frontend domains are allowed to talk to it.
-frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:5173') # Default for local dev
+# Get the frontend URL from environment variables for production, with a fallback for local dev
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
+# CORS settings: A list of origins that are authorized to make cross-site HTTP requests.
 CORS_ALLOWED_ORIGINS = [
-    # Add your Vercel frontend URL from the environment variable.
-    frontend_url,
-    # Also keep the local development URLs for convenience.
+    FRONTEND_URL,
+    # Also include local dev URLs in the list for convenience
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
-# For security, tell Django that it can trust POST/PUT requests from our frontend domain.
-CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+
+# CSRF settings: A list of hosts which are trusted for cross-site sharing of credentials.
+CSRF_TRUSTED_ORIGINS = [
+    FRONTEND_URL,
+    # Also include local dev URLs
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+# Production-only security settings suggested by the other LLM
+if IS_PRODUCTION:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # Optional but recommended security headers
+    SECURE_HSTS_SECONDS = 31536000 # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
 
 
 # ==============================================================================
@@ -72,20 +79,18 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'whitenoise.runserver_nostatic', # For serving static files in development
+    'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
-    # 3rd Party Apps
     'rest_framework',
     'corsheaders',
-    # Our App
     'api',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', # Should be right after security
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware', # Placed high up
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
