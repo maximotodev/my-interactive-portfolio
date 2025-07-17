@@ -3,20 +3,12 @@ from rest_framework import serializers
 from .models import Project, Certification
 
 class ProjectSerializer(serializers.ModelSerializer):
-    # This field will generate the full URL for the image
-    image = serializers.ImageField(use_url=True)
-
+    # By removing the explicit 'image' field definition, we allow the
+    # ModelSerializer to correctly infer that it's a URLField from the model.
     class Meta:
         model = Project
-        fields = (
-            'id', 
-            'title', 
-            'description', 
-            'technologies', 
-            'repository_url', 
-            'live_url', 
-            'image'
-        )
+        # Using '__all__' is the simplest way to include all fields from the model.
+        fields = '__all__'
 
 class CertificationSerializer(serializers.ModelSerializer):
     class Meta:
