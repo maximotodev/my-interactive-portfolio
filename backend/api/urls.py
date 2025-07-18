@@ -2,7 +2,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    ProjectViewSet, CertificationViewSet, github_stats, github_contributions,
+    ProjectViewSet, CertificationViewSet, PostViewSet, github_stats, github_contributions,
     skill_match_view, nostr_profile, bitcoin_address,
     latest_note # <-- Add this import
 )
@@ -10,7 +10,7 @@ from .views import (
 router = DefaultRouter()
 router.register(r'projects', ProjectViewSet)
 router.register(r'certifications', CertificationViewSet)
-
+router.register(r'posts', PostViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('github-stats/', github_stats, name='github-stats'),

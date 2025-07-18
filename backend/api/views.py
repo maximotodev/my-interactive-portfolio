@@ -28,8 +28,8 @@ from pynostr.key import PublicKey
 from bitcoinlib.wallets import Wallet, WalletError
 
 # Local Imports
-from .models import Project, Certification
-from .serializers import ProjectSerializer, CertificationSerializer
+from .models import Project, Certification, Post
+from .serializers import ProjectSerializer, CertificationSerializer, PostSerializer
 
 # --- Configuration Constants ---
 GITHUB_USERNAME = "maximotodev"
@@ -192,6 +192,14 @@ class ProjectViewSet(viewsets.ReadOnlyModelViewSet):
 class CertificationViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Certification.objects.all().order_by('-date_issued')
     serializer_class = CertificationSerializer
+class PostViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint for published blog posts.
+    Allows fetching a list of posts and a single post by its slug.
+    """
+    queryset = Post.objects.filter(is_published=True) # Only show published posts
+    serializer_class = PostSerializer
+    lookup_field = 'slug' # Use the slug for retrieving a single post
 @api_view(['GET'])
 def bitcoin_address(request):
     cache_key = f"bitcoin_address_{BITCOIN_WALLET_NAME}"

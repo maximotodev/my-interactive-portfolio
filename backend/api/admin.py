@@ -1,7 +1,7 @@
 # backend/api/admin.py
 
 from django.contrib import admin
-from .models import Project, Certification # Import your models
+from .models import Project, Certification, Post # Import your models
 
 # Register your models here.
 
@@ -20,3 +20,11 @@ class CertificationAdmin(admin.ModelAdmin):
     """
     list_display = ('name', 'issuing_organization', 'date_issued')
     list_filter = ('issuing_organization', 'date_issued')
+
+@admin.register(Post)
+class PostAdmin(admin.ModelAdmin):
+    list_display = ('title', 'slug', 'published_date', 'is_published')
+    list_filter = ('is_published', 'published_date')
+    search_fields = ('title', 'content')
+    # This will automatically pre-populate the slug field from the title
+    prepopulated_fields = {'slug': ('title',)}
