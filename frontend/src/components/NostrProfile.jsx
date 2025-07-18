@@ -1,7 +1,6 @@
 // frontend/src/components/NostrProfile.jsx
 import React, { useState, useEffect } from "react";
 import { fetchNostrProfile } from "../api";
-import LoadingSpinner from "./LoadingSpinner";
 
 const NostrProfile = () => {
   const [user, setUser] = useState(null);
@@ -20,11 +19,21 @@ const NostrProfile = () => {
     getProfile();
   }, []);
 
-  if (error) return <p className="text-red-400">{error}</p>;
-  if (!user)
+  // While loading, show a simplified skeleton
+  if (!user && !error) {
     return (
-      <div className="animate-pulse h-32 w-32 rounded-full bg-gray-700 mx-auto mb-4"></div>
+      <div className="animate-pulse">
+        <div className="h-32 w-32 rounded-full bg-gray-700 mx-auto"></div>
+        <div className="h-8 w-48 bg-gray-700 rounded-md mx-auto mt-4"></div>
+        <div className="h-5 w-80 bg-gray-700 rounded-md mx-auto mt-2"></div>
+      </div>
     );
+  }
+
+  if (error) return <p className="text-red-400">{error}</p>;
+
+  // We get the npub from the profile data itself if available
+  const npub = user.nip05.split("@")[0]; // A simple way to get it, adjust if needed
 
   return (
     <div className="flex flex-col items-center">
@@ -39,6 +48,18 @@ const NostrProfile = () => {
       <p className="text-lg text-gray-300 max-w-xl mx-auto mt-2">
         {user.about}
       </p>
+
+      {/* --- ADD THIS BUTTON --- */}
+      {npub && (
+        <a
+          href={`https://primal.net/p/${npub}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 inline-block bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-100"
+        >
+          View on Nostr
+        </a>
+      )}
     </div>
   );
 };
