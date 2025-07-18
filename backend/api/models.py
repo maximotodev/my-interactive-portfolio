@@ -16,7 +16,7 @@ class Project(models.Model):
     technologies = models.CharField(max_length=300, help_text="Comma-separated list of technologies")
     repository_url = models.URLField(blank=True, null=True)
     live_url = models.URLField(blank=True, null=True)
-    image = models.ImageField(upload_to='project_images/', blank=True, null=True)
+    image = models.URLField(max_length=500, blank=True, null=True)
 
     def __str__(self):
         return self.title

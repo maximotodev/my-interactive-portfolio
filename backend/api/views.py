@@ -37,7 +37,7 @@ NOSTR_RELAYS = ["wss://relay.damus.io", "wss://relay.primal.net", "wss://nos.lol
 CACHE_TIMEOUT_SECONDS = 3600
 BITCOIN_WALLET_NAME = "MyPortfolioWallet"
 # --- NEW: Choose a lightweight but effective sentence transformer model ---
-SENTENCE_MODEL_NAME = 'all-MiniLM-L6-v2'
+# SENTENCE_MODEL_NAME = 'all-MiniLM-L6-v2'
 # ==============================================================================
 # Global Model Cache (for performance)
 # ==============================================================================

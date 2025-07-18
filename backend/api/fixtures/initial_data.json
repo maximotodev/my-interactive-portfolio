@@ -55,7 +55,7 @@
   "fields": {
     "name": "Configuration Management and the Cloud",
     "issuing_organization": "Coursera",
-    "credential_url": "https://coursera.org/verify/OEYQ6UYY3SUN/",
+    "credential_url": "https://coursera.org/verify/OEYQ6UYY3SUN",
     "date_issued": "2025-02-09"
   }
 },
@@ -64,11 +64,11 @@
   "pk": 1,
   "fields": {
     "title": "Tribev2",
-    "description": "A modern social media platform designed to connect communities and foster interaction. Built with a scalable architecture to handle real-time updates and user-generated content.",
+    "description": "A modern social media platform designed to connect communities and foster interaction. Built with a scalable architecture to handle real-time updates and user-generated content",
     "technologies": "React, Next.js, Firebase, TailwindCSS, Vercel",
     "repository_url": "https://github.com/maximotodev/tribev2",
-    "live_url": "https://tribev2.vercel.app/",
-    "image": "project_images/tribev2.png"
+    "live_url": "https://tribev2.vercel.app",
+    "image": "https://i.ibb.co/Mk1C1gnP/tribev2.png"
   }
 },
 {
@@ -79,8 +79,8 @@
     "description": "An interactive chatbot designed to provide real-time Bitcoin information, price tracking, market trends, and user-specific cryptocurrency insights. It leverages the Gemini API for accurate and up-to-date data.",
     "technologies": "Flask, React, Gemini API, WebSocket, JavaScript, HTML, CSS",
     "repository_url": "https://github.com/maximotodev/bitcoin-chatbot",
-    "live_url": "https://bitcoin-chatbot.netlify.app/",
-    "image": "project_images/Screen_Shot_2025-07-10_at_9.10.59_PM.png"
+    "live_url": "https://bitcoin-chatbot.netlify.app",
+    "image": "https://i.ibb.co/chVrPQWW/Screen-Shot-2025-07-10-at-9-10-59-PM.png"
   }
 },
 {
@@ -89,10 +89,10 @@
   "fields": {
     "title": "Gemini Quest",
     "description": "Gemini Quest is an interactive trivia quiz web application powered by the Gemini API, built with Flask for the backend and React with Vite for the frontend. The app is designed to engage users in a dynamic, quiz-based experience, where they can test their knowledge across various categories.",
-    "technologies": "React, Vite, Flask",
+    "technologies": "React, Vite, Flask, Gemini API, Tailwind CSS",
     "repository_url": "https://github.com/maximotodev/gemini-quest",
-    "live_url": "https://gemini-quest.netlify.app/",
-    "image": "project_images/Screen-Shot-2025-06-11-at-12-46-24-PM.png"
+    "live_url": "https://gemini-quest.netlify.app",
+    "image": "https://i.ibb.co/N2Z79Rvs/Screen-Shot-2025-06-11-at-12-46-24-PM.png"
   }
 },
 {
@@ -103,8 +103,8 @@
     "description": "Portfolio Website for Mia Reynolds",
     "technologies": "React, Next.js, Firebase, TailwindCSS, Vercel",
     "repository_url": "https://github.com/maximotodev/miareynolds",
-    "live_url": "https://miareynolds.vercel.app/",
-    "image": "project_images/Screen_Shot_2025-07-10_at_9.14.56_PM.png"
+    "live_url": "https://miareynolds.vercel.app",
+    "image": "https://i.ibb.co/twDgyR0B/projects-mia-reynolds.png"
   }
 }
 ]
