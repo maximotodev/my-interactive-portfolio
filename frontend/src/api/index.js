@@ -17,7 +17,7 @@ export const fetchGithubContributions = () => API.get("github-contributions/");
 export const fetchNostrProfile = () => API.get("nostr-profile/");
 export const fetchLatestNote = () => API.get("latest-note/");
 export const fetchBitcoinAddress = () => API.get("bitcoin-address/");
-export const matchSkills = (query) => API.post("skill-match/", { query });
+// export const matchSkills = (query) => API.post("skill-match/", { query });
 
 // --- ADD THESE NEW EXPORTS ---
 export const fetchPosts = () => API.get("posts/");

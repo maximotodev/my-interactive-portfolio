@@ -265,15 +265,15 @@ def latest_note(request):
     return Response({'error': 'No recent note found.'}, status=404)
 
 # --- REFACTORED AI/ML SKILL MATCHER VIEW ---
-@api_view(['POST'])
-def skill_match_view(request):
-    """
-    AI Skill Matcher is temporarily disabled for deployment on the free tier
-    due to memory constraints. It returns an empty list to prevent errors.
-    """
-    print("INFO: AI Skill Matcher endpoint called, returning empty list (feature disabled).")
-    # By returning an empty list, the frontend will correctly show "No projects match your query."
-    return Response([])
+# @api_view(['POST'])
+# def skill_match_view(request):
+#     """
+#     AI Skill Matcher is temporarily disabled for deployment on the free tier
+#     due to memory constraints. It returns an empty list to prevent errors.
+#     """
+#     print("INFO: AI Skill Matcher endpoint called, returning empty list (feature disabled).")
+#     # By returning an empty list, the frontend will correctly show "No projects match your query."
+#     return Response([])
     # """
     # Uses a HYBRID approach.
     # 1. Filters projects by keyword in the 'technologies' field.
