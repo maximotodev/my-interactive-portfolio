@@ -10,7 +10,7 @@ from .views import (
     nostr_profile,
     latest_note,
     bitcoin_address,
-    mempool_stats
+    mempool_stats,
 )
 
 router = DefaultRouter()
