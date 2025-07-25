@@ -143,12 +143,28 @@ def fetch_github_contributions_data():
     except requests.RequestException: return None
 
 def fetch_onchain_bitcoin_address():
-    """Loads a persistent Bitcoin wallet and returns a receiving address."""
+    """
+    Loads a persistent, deterministic Bitcoin wallet from a mnemonic
+    stored in an environment variable.
+    """
+    wallet_name = "MyPortfolioWallet_prod" # Use a new name
+    mnemonic = os.getenv('BITCOIN_WALLET_MNEMONIC')
+
+    if not mnemonic:
+        # This should never happen in production if the secret is set
+        print("ERROR: BITCOIN_WALLET_MNEMONIC environment variable not set.")
+        return None
+
     try:
-        w = Wallet(BITCOIN_WALLET_NAME)
+        # This will load the wallet if it exists on the ephemeral disk.
+        w = Wallet(wallet_name)
     except WalletError:
-        print(f"Creating new Bitcoin wallet: {BITCOIN_WALLET_NAME}")
-        w = Wallet.create(BITCOIN_WALLET_NAME, witness_type='segwit')
+        # If it doesn't exist (e.g., after a deploy), CREATE it deterministically
+        # from your permanent mnemonic seed phrase.
+        print(f"INFO: Creating new DETERMINISTIC Bitcoin wallet from mnemonic: {wallet_name}")
+        w = Wallet.create(wallet_name, keys=mnemonic, witness_type='segwit')
+    
+    # Get the first available key's address. This will be the same address every time.
     key = w.get_key()
     return {'address': key.address}
 
