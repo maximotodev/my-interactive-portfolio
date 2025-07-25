@@ -19,7 +19,6 @@ const NostrProfile = () => {
     getProfile();
   }, []);
 
-  // While loading, show a simplified skeleton
   if (!user && !error) {
     return (
       <div className="animate-pulse">
@@ -32,15 +31,16 @@ const NostrProfile = () => {
 
   if (error) return <p className="text-red-400">{error}</p>;
 
-  // We get the npub from the profile data itself if available
-  const npub = user.nip05.split("@")[0]; // A simple way to get it, adjust if needed
+  // A simple way to get the npub from the nip05 field if it exists
+  const npub = user.nip05 ? user.nip05.split("@")[0] : null;
 
   return (
     <div className="flex flex-col items-center">
       <img
         src={user.picture}
-        alt={user.display_name}
-        className="w-32 h-32 rounded-full border-4 border-purple-500 shadow-lg"
+        alt={user.display_name || user.name}
+        className="w-32 h-32 rounded-full border-4 border-purple-600 dark:border-purple-500 shadow-lg 
+                           object-cover" // <-- THIS IS THE FIX
       />
       <h1 className="text-3xl md:text-4xl font-bold mt-4 text-gray-900 dark:text-gray-100">
         {user.display_name || user.name}
