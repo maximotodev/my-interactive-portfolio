@@ -13,6 +13,7 @@ import SkillMatcher from "../components/SkillMatcher";
 import GithubContributions from "../components/GithubContributions";
 import ProjectList from "../components/ProjectList";
 import CertificationList from "../components/CertificationList";
+import MempoolStats from "../components/MempoolStats";
 import FadeIn from "../components/FadeIn";
 
 const Home = () => {
@@ -39,15 +40,18 @@ const Home = () => {
         <LatestNostrNote />
       </FadeIn>
 
+      <FadeIn delay={300}>
+        <MempoolStats />
+      </FadeIn>
       {/* --- THIS IS THE CORRECTED MAIN SECTION --- */}
       <main>
         {/* GithubContributions appears first, with the first delay */}
-        <FadeIn delay={300}>
+        <FadeIn delay={400}>
           <GithubContributions />
         </FadeIn>
 
         {/* SkillMatcher appears second, with the next delay */}
-        <FadeIn delay={400}>
+        <FadeIn delay={500}>
           <SkillMatcher
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
@@ -55,12 +59,12 @@ const Home = () => {
         </FadeIn>
 
         {/* ProjectList appears third, right below the matcher */}
-        <FadeIn delay={500}>
+        <FadeIn delay={600}>
           <ProjectList searchQuery={debouncedSearchQuery} />
         </FadeIn>
 
         {/* Certifications appear last */}
-        <FadeIn delay={600}>
+        <FadeIn delay={700}>
           <CertificationList />
         </FadeIn>
       </main>

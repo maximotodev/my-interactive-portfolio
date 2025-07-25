@@ -9,7 +9,8 @@ from .views import (
     github_contributions,
     nostr_profile,
     latest_note,
-    bitcoin_address
+    bitcoin_address,
+    mempool_stats
 )
 
 router = DefaultRouter()
@@ -23,5 +24,6 @@ urlpatterns = [
     path('github-contributions/', github_contributions, name='github-contributions'),
     path('nostr-profile/', nostr_profile, name='nostr-profile'),
     path('latest-note/', latest_note, name='latest-note'),
+    path('mempool-stats/', mempool_stats, name='mempool-stats'),
     path('bitcoin-address/', bitcoin_address, name='bitcoin-address'),
 ]
