@@ -42,10 +42,10 @@ const NostrProfile = () => {
         alt={user.display_name}
         className="w-32 h-32 rounded-full border-4 border-purple-500 shadow-lg"
       />
-      <h1 className="text-4xl font-bold mt-4">
+      <h1 className="text-3xl md:text-4xl font-bold mt-4">
         {user.display_name || user.name}
       </h1>
-      <p className="text-lg text-gray-300 max-w-xl mx-auto mt-2">
+      <p className="text-base md:text-lg text-gray-300 max-w-xl mx-auto mt-2">
         {user.about}
       </p>
 

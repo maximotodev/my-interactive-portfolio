@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { fetchMempoolStats } from "../api"; // Only need this one now
 import FadeIn from "./FadeIn";
-import { FaCube, FaBolt, FaDollarSign, FaMugHot } from "react-icons/fa6";
+import { FaCube, FaBolt, FaDollarSign, FaHashnode } from "react-icons/fa6";
 
 const StatCard = ({ icon, title, value, subtext, color = "text-white" }) => (
   <div className="bg-gray-800 p-6 rounded-lg flex items-center space-x-4 ring-1 ring-white/10">
@@ -68,7 +68,7 @@ const MempoolStats = () => {
             color="text-yellow-400"
           />
           <StatCard
-            icon={<FaMugHot />}
+            icon={<FaHashnode />}
             title="Network Hashrate"
             value={formatHashrate(hashrate)}
           />

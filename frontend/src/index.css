@@ -3,6 +3,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  /* Apply a smooth transition to all elements by default */
+  * {
+    @apply transition-all duration-200 ease-in-out;
+  }
+}
 body {
   /* Apply a slightly more professional dark theme and the new font */
   @apply bg-gray-900 text-gray-200 font-sans;

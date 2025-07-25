@@ -98,6 +98,7 @@ const ProjectList = ({ searchQuery }) => {
                 src={project.image}
                 alt={project.title}
                 className="w-full h-48 object-cover"
+                loading="lazy"
               />
             )}
             <div className="p-6">

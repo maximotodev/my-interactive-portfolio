@@ -8,6 +8,7 @@ import Modal from "./Modal";
 const BitcoinTip = () => {
   const [btcAddress, setBtcAddress] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [copyText, setCopyText] = useState("Copy");
 
   useEffect(() => {
     const getAddress = async () => {
@@ -24,13 +25,12 @@ const BitcoinTip = () => {
   const handleCopyAddress = () => {
     if (btcAddress) {
       navigator.clipboard.writeText(btcAddress);
-      alert("Bitcoin Address copied to clipboard!");
+      setCopyText("Copied!");
+      setTimeout(() => setCopyText("Copy"), 2000);
     }
   };
 
-  if (!btcAddress) {
-    return null;
-  }
+  if (!btcAddress) return null;
 
   const qrValue = `bitcoin:${btcAddress}`;
 
@@ -72,7 +72,7 @@ const BitcoinTip = () => {
             className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1 px-3 rounded"
             title="Copy to clipboard"
           >
-            Copy
+            {copyText}
           </button>
         </div>
       </Modal>
