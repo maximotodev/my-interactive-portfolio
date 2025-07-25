@@ -63,14 +63,16 @@ const ProjectList = ({ searchQuery }) => {
   return (
     <section className="my-12">
       <div className="text-center mb-10">
-        <h2 className="text-3xl font-bold mb-2">My Projects</h2>
-        <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+        <h2 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+          My Projects
+        </h2>
+        <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
           {introText} Others can be found on my{" "}
           <a
             href="https://github.com/maximotodev"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-purple-400 hover:underline font-semibold"
+            className="text-purple-600 dark:text-purple-400 hover:underline font-semibold"
           >
             GitHub
           </a>
@@ -80,18 +82,22 @@ const ProjectList = ({ searchQuery }) => {
 
       {/* If a search is active and finds no results, show this message */}
       {isSearchActive && filteredProjects.length === 0 && (
-        <div className="text-center p-8 bg-gray-800 rounded-lg mt-4">
-          <p className="text-xl text-gray-300">No projects match your query.</p>
-          <p className="text-gray-400">Try a different keyword.</p>
+        <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-lg">
+          <p className="text-xl text-gray-800 dark:text-gray-300">
+            No projects match your query.
+          </p>
+          <p className="text-gray-600 dark:text-gray-400">
+            Try broadening your search terms or clear the search to see all
+            projects.
+          </p>
         </div>
       )}
 
-      {/* The grid of project cards, now mapping over `filteredProjects` */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
-        {filteredProjects.map((project) => (
+        {allProjects.map((project) => (
           <div
             key={project.id}
-            className="bg-gray-800 rounded-lg shadow-xl overflow-hidden ring-1 ring-white/10 transition-all duration-300 ease-in-out transform hover:-translate-y-1"
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden ring-1 ring-black/5 dark:ring-white/10 transition-all duration-300 ease-in-out transform hover:-translate-y-1"
           >
             {project.image && (
               <img
@@ -102,36 +108,28 @@ const ProjectList = ({ searchQuery }) => {
               />
             )}
             <div className="p-6">
-              <h3 className="text-xl font-bold text-purple-400">
+              <h3 className="text-xl font-bold text-purple-600 dark:text-purple-400">
                 {project.title}
               </h3>
-              <p className="text-gray-300 mt-2 h-24 overflow-y-auto">
+              <p className="text-gray-700 dark:text-gray-300 mt-2 h-24 overflow-y-auto">
                 {project.description}
               </p>
-              <p className="text-sm text-gray-400 mt-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
                 <b>Technologies:</b> {project.technologies}
               </p>
               <div className="mt-4 space-x-4">
-                {project.repository_url && (
-                  <a
-                    href={project.repository_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold text-yellow-400 hover:text-yellow-300 transition-colors"
-                  >
-                    Repo
-                  </a>
-                )}
-                {project.live_url && (
-                  <a
-                    href={project.live_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-semibold text-yellow-400 hover:text-yellow-300 transition-colors"
-                  >
-                    Live Demo
-                  </a>
-                )}
+                <a
+                  href={project.repository_url}
+                  className="font-semibold text-yellow-600 dark:text-yellow-400 hover:underline"
+                >
+                  Repo
+                </a>
+                <a
+                  href={project.live_url}
+                  className="font-semibold text-yellow-600 dark:text-yellow-400 hover:underline"
+                >
+                  Live Demo
+                </a>
               </div>
             </div>
           </div>

@@ -1,6 +1,5 @@
 // frontend/src/components/BitcoinTip.jsx
 import React, { useState, useEffect } from "react";
-// --- THIS IS THE NEW, RELIABLE LIBRARY ---
 import QRCode from "react-qr-code";
 import { fetchBitcoinAddress } from "../api";
 import Modal from "./Modal";
@@ -30,7 +29,9 @@ const BitcoinTip = () => {
     }
   };
 
-  if (!btcAddress) return null;
+  if (!btcAddress) {
+    return null;
+  }
 
   const qrValue = `bitcoin:${btcAddress}`;
 
@@ -38,25 +39,23 @@ const BitcoinTip = () => {
     <>
       <button
         onClick={() => setIsModalOpen(true)}
-        className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg transition-colors flex items-center justify-center h-full"
+        // Use a more generic orange color that works on both themes
+        className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg transform hover:scale-105 active:scale-100"
       >
         <span>Zap sats ⚡</span>
       </button>
 
+      {/* The Modal's own styles will be handled by its component file if needed */}
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <h2 className="text-2xl font-bold mb-4 text-orange-400">Zap sats ⚡</h2>
-        <p className="mb-4 text-gray-300">
+        {/* Modal Content */}
+        <h2 className="text-2xl font-bold mb-4 text-orange-500 dark:text-orange-400">
+          Zap sats ⚡
+        </h2>
+        <p className="mb-4 text-gray-600 dark:text-gray-300">
           Scan with any Bitcoin wallet or copy the address.
         </p>
 
-        <div
-          style={{
-            background: "white",
-            padding: "16px",
-            display: "inline-block",
-            borderRadius: "8px",
-          }}
-        >
+        <div className="bg-white p-4 inline-block rounded-lg">
           <QRCode
             value={qrValue}
             size={220}
@@ -65,11 +64,13 @@ const BitcoinTip = () => {
           />
         </div>
 
-        <div className="mt-4 p-3 bg-gray-700 rounded-lg flex items-center justify-between">
-          <span className="text-sm font-mono break-all mr-2">{btcAddress}</span>
+        <div className="mt-4 p-3 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-between">
+          <span className="text-sm font-mono break-all mr-2 text-gray-800 dark:text-gray-200">
+            {btcAddress}
+          </span>
           <button
             onClick={handleCopyAddress}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1 px-3 rounded"
+            className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1 px-3 rounded w-20 text-center"
             title="Copy to clipboard"
           >
             {copyText}

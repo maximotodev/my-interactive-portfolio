@@ -28,7 +28,7 @@ const BlogList = () => {
   return (
     <FadeIn>
       <div className="container mx-auto p-4 md:p-8 max-w-4xl">
-        <h1 className="text-4xl font-bold mb-8 text-purple-400 border-b-2 border-purple-500 pb-2">
+        <h1 className="text-4xl font-bold mb-8 text-purple-600 dark:text-purple-400 border-b-2 border-purple-500 pb-2">
           My Writings
         </h1>
         <div className="space-y-8">
@@ -36,12 +36,12 @@ const BlogList = () => {
             <Link
               to={`/blog/${post.slug}`}
               key={post.slug}
-              className="block p-6 bg-gray-800 rounded-lg shadow-lg hover:bg-gray-700 transition-colors"
+              className="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl dark:ring-1 dark:ring-white/10 dark:hover:bg-gray-700"
             >
-              <h2 className="text-2xl font-bold text-yellow-400">
+              <h2 className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                 {post.title}
               </h2>
-              <p className="text-gray-400 mt-2">
+              <p className="text-gray-500 dark:text-gray-400 mt-2">
                 Published on{" "}
                 {new Date(post.published_date).toLocaleDateString()}
               </p>

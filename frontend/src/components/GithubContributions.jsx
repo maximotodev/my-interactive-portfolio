@@ -24,7 +24,7 @@ const GithubContributions = () => {
 
   if (loading) {
     return (
-      <div className="bg-gray-800 p-6 rounded-lg shadow-md h-48 flex items-center justify-center">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md h-48 flex items-center justify-center animate-pulse">
         <LoadingSpinner />
       </div>
     );
@@ -54,15 +54,19 @@ const GithubContributions = () => {
   };
 
   return (
-    <section className="my-8">
-      <h2 className="text-3xl font-bold mb-6 border-b-2 border-purple-500 pb-2">
+    <section className="my-12">
+      <h2 className="text-3xl font-bold mb-6 border-b-2 border-purple-500 pb-2 text-gray-900 dark:text-gray-100">
         {data.totalContributions} Contributions in the Last Year
       </h2>
-      <div className="bg-gray-800 p-6 rounded-lg shadow-md">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg text-gray-800 dark:text-gray-200 ring-1 ring-black/5 dark:ring-white/10">
         <GitHubCalendar
-          username="maximotodev" // The library requires a username, but we are providing our own data.
+          username="maximotodev"
           data={transformData(contributions)}
-          colorScheme="dark"
+          // The component's built-in 'dark' theme works perfectly with our toggle
+          theme={{
+            light: ["#ebedf0", "#9be9a8", "#40c463", "#30a14e", "#216e39"],
+            dark: ["#161b22", "#0e4429", "#006d32", "#26a641", "#39d353"],
+          }}
           blockSize={14}
           blockMargin={4}
           fontSize={16}

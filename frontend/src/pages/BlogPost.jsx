@@ -28,11 +28,14 @@ const BlogPost = () => {
   return (
     <FadeIn>
       <div className="container mx-auto p-4 md:p-8 max-w-3xl">
-        <Link to="/blog" className="text-purple-400 hover:underline mb-8 block">
+        <Link
+          to="/blog"
+          className="text-purple-600 dark:text-purple-400 hover:underline mb-8 block"
+        >
           ← Back to all articles
         </Link>
-        <article className="prose prose-invert prose-lg lg:prose-xl max-w-none">
-          <h1 className="text-yellow-400">{post.title}</h1>
+        <article className="prose dark:prose-invert prose-lg lg:prose-xl max-w-none">
+          <h1 className="text-yellow-600 dark:text-yellow-400">{post.title}</h1>
           <ReactMarkdown>{post.content}</ReactMarkdown>
         </article>
       </div>

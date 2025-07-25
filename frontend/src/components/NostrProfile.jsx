@@ -23,9 +23,9 @@ const NostrProfile = () => {
   if (!user && !error) {
     return (
       <div className="animate-pulse">
-        <div className="h-32 w-32 rounded-full bg-gray-700 mx-auto"></div>
-        <div className="h-8 w-48 bg-gray-700 rounded-md mx-auto mt-4"></div>
-        <div className="h-5 w-80 bg-gray-700 rounded-md mx-auto mt-2"></div>
+        <div className="h-32 w-32 rounded-full bg-gray-300 dark:bg-gray-700 mx-auto"></div>
+        <div className="h-8 w-48 bg-gray-300 dark:bg-gray-700 rounded-md mx-auto mt-4"></div>
+        <div className="h-5 w-80 bg-gray-300 dark:bg-gray-700 rounded-md mx-auto mt-2"></div>
       </div>
     );
   }
@@ -42,20 +42,19 @@ const NostrProfile = () => {
         alt={user.display_name}
         className="w-32 h-32 rounded-full border-4 border-purple-500 shadow-lg"
       />
-      <h1 className="text-3xl md:text-4xl font-bold mt-4">
+      <h1 className="text-3xl md:text-4xl font-bold mt-4 text-gray-900 dark:text-gray-100">
         {user.display_name || user.name}
       </h1>
-      <p className="text-base md:text-lg text-gray-300 max-w-xl mx-auto mt-2">
+      <p className="text-base md:text-lg text-gray-600 dark:text-gray-300 max-w-xl mx-auto mt-2">
         {user.about}
       </p>
 
-      {/* --- ADD THIS BUTTON --- */}
       {npub && (
         <a
           href={`https://primal.net/p/${npub}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-4 inline-block bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 ease-in-out transform hover:scale-105 active:scale-100"
+          className="mt-4 inline-block bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transform hover:scale-105 active:scale-100"
         >
           View on Nostr
         </a>

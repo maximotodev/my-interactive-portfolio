@@ -25,12 +25,20 @@ const GithubStats = () => {
       href="https://github.com/maximotodev"
       target="_blank"
       rel="noopener noreferrer"
-      className="bg-gray-800 p-4 rounded-lg text-center hover:bg-gray-700 transition-colors"
+      className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md hover:shadow-xl dark:ring-1 dark:ring-white/10 dark:hover:bg-gray-700"
     >
-      <h3 className="font-bold text-purple-400">GitHub Stats</h3>
-      <p>{stats.public_repos} Repos</p>
-      <p>{stats.followers} Followers</p>
-      <p>{stats.total_stars} Stars</p>
+      <h3 className="font-bold text-purple-600 dark:text-purple-400">
+        GitHub Stats
+      </h3>
+      <p className="text-gray-700 dark:text-gray-300">
+        {stats.public_repos} Repos
+      </p>
+      <p className="text-gray-700 dark:text-gray-300">
+        {stats.followers} Followers
+      </p>
+      <p className="text-gray-700 dark:text-gray-300">
+        {stats.total_stars} Stars
+      </p>
     </a>
   );
 };

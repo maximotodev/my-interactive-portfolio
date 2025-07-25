@@ -4,29 +4,38 @@
 @tailwind utilities;
 
 @layer base {
-  /* Apply a smooth transition to all elements by default */
   * {
     @apply transition-all duration-200 ease-in-out;
   }
 }
+
 body {
-  /* Apply a slightly more professional dark theme and the new font */
-  @apply bg-gray-900 text-gray-200 font-sans;
+  /* Default (Light Mode) */
+  @apply bg-gray-50 text-gray-800;
+  /* Dark Mode */
+  @apply dark:bg-gray-900 dark:text-gray-200;
+
+  font-family: "Inter", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom scrollbar for a nicer look in project descriptions etc. */
+/* Custom scrollbar for a nicer look */
 ::-webkit-scrollbar {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #2d3748; /* gray-800 */
+  @apply bg-gray-200 dark:bg-gray-800;
 }
 ::-webkit-scrollbar-thumb {
-  background: #4a5568; /* gray-600 */
-  border-radius: 4px;
+  @apply bg-gray-400 dark:bg-gray-600 rounded-md;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #718096; /* gray-500 */
+  @apply bg-gray-500 dark:bg-gray-500;
+}
+
+/* Styles for Markdown content from the blog */
+.prose {
+  /* This ensures the prose plugin respects our dark mode text colors */
+  @apply text-gray-700 dark:text-gray-300;
 }

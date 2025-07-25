@@ -21,11 +21,11 @@ const formatTimeAgo = (timestamp) => {
 };
 
 const LatestNostrNoteSkeleton = () => (
-  <div className="my-8 p-6 bg-gray-800 rounded-lg shadow-xl ring-1 ring-white/10 animate-pulse">
-    <div className="h-4 w-1/4 bg-gray-700 rounded mb-4"></div>
-    <div className="h-5 w-full bg-gray-700 rounded mb-2"></div>
-    <div className="h-5 w-5/6 bg-gray-700 rounded"></div>
-    <div className="h-4 w-1/3 bg-gray-700 rounded mt-4"></div>
+  <div className="my-8 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md ring-1 ring-black/5 dark:ring-white/10 animate-pulse">
+    <div className="h-4 w-1/4 bg-gray-300 dark:bg-gray-700 rounded mb-4"></div>
+    <div className="h-5 w-full bg-gray-300 dark:bg-gray-700 rounded mb-2"></div>
+    <div className="h-5 w-5/6 bg-gray-300 dark:bg-gray-700 rounded"></div>
+    <div className="h-4 w-1/3 bg-gray-300 dark:bg-gray-700 rounded mt-4 ml-auto"></div>
   </div>
 );
 
@@ -51,14 +51,16 @@ const LatestNostrNote = () => {
 
   return (
     <div className="my-8">
-      <h3 className="text-lg font-semibold text-gray-400 mb-2">
+      <h3 className="text-lg font-semibold text-gray-500 dark:text-gray-400 mb-2">
         Latest Note on Nostr:
       </h3>
-      <div className="bg-gray-800 rounded-lg shadow-xl p-6 ring-1 ring-white/10">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 ring-1 ring-black/5 dark:ring-white/10">
         <blockquote className="border-l-4 border-purple-500 pl-4">
-          <p className="text-lg italic text-gray-200">{note.content}</p>
+          <p className="text-lg italic text-gray-700 dark:text-gray-200">
+            {note.content}
+          </p>
         </blockquote>
-        <p className="text-right text-sm text-gray-500 mt-4">
+        <p className="text-right text-sm text-gray-500 dark:text-gray-400 mt-4">
           — Posted {formatTimeAgo(note.created_at)}
         </p>
       </div>
