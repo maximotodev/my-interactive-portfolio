@@ -31,16 +31,14 @@ const NostrProfile = () => {
 
   if (error) return <p className="text-red-400">{error}</p>;
 
-  // A simple way to get the npub from the nip05 field if it exists
-  const npub = user.nip05 ? user.nip05.split("@")[0] : null;
+  const npub = user.npub;
 
   return (
     <div className="flex flex-col items-center">
       <img
         src={user.picture}
         alt={user.display_name || user.name}
-        className="w-32 h-32 rounded-full border-4 border-purple-600 dark:border-purple-500 shadow-lg 
-                           object-cover" // <-- THIS IS THE FIX
+        className="w-32 h-32 rounded-full border-4 border-purple-600 dark:border-purple-500 shadow-lg object-cover"
       />
       <h1 className="text-3xl md:text-4xl font-bold mt-4 text-gray-900 dark:text-gray-100">
         {user.display_name || user.name}

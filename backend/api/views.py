@@ -237,6 +237,7 @@ def nostr_profile(request):
     if cached_data: return Response(cached_data)
     profile_data = fetch_nostr_profile_data()
     if profile_data:
+        profile_data['npub'] = npub
         cache.set(cache_key, profile_data, timeout=CACHE_TIMEOUT_SECONDS)
         return Response(profile_data)
     return Response({'error': 'Nostr profile not found.'}, status=status.HTTP_404_NOT_FOUND)
