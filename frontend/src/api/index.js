@@ -17,4 +17,5 @@ export const fetchBitcoinAddress = () => API.get("bitcoin-address/");
 export const fetchPosts = () => API.get("posts/");
 export const fetchPostBySlug = (slug) => API.get(`posts/${slug}/`);
 export const fetchMempoolStats = () => API.get("mempool-stats/");
-// The 'matchSkills' export has been removed.
+export const postChatMessage = (question) => API.post("chat/", { question });
+export const matchSkills = (query) => API.post("skill-match/", { query });
