@@ -18,6 +18,7 @@ from pynostr.filters import FiltersList, Filters
 from pynostr.event import EventKind
 from pynostr.key import PublicKey
 from bitcoinlib.wallets import Wallet, WalletError
+from groq import Groq
 
 # Local Imports
 from .models import Project, Certification, Post
@@ -28,7 +29,7 @@ GITHUB_USERNAME = "maximotodev"
 NOSTR_RELAYS = ["wss://relay.damus.io", "wss://relay.primal.net", "wss://nos.lol", "wss://relay.nostr.band"]
 CACHE_TIMEOUT_SECONDS = 3600  # 1 hour
 BITCOIN_WALLET_NAME = "MyPortfolioWallet"
-
+HUGGINGFACE_EMBEDDING_MODEL_URL = "https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2"
 # ==============================================================================
 # HELPER & SERVICE FUNCTIONS
 # ==============================================================================
@@ -291,3 +292,133 @@ def mempool_stats(request):
         cache.set(cache_key, data, timeout=mempool_cache_timeout)
         return Response(data)
     return Response({'error': 'Failed to fetch data from mempool.space API.'}, status=status.HTTP_502_BAD_GATEWAY)
+
+# --- AI SKILL MATCHER 2.0 (API-POWERED) ---
+@api_view(['POST'])
+def skill_match_view(request):
+    """
+    Uses the Hugging Face Inference API for semantic search.
+    This is safe to run on a free-tier server.
+    """
+    query = request.data.get('query', '')
+    if not query.strip():
+        return Response([])
+
+    projects = Project.objects.all()
+    if not projects.exists():
+        return Response([])
+
+    project_docs = [f"{p.title}. {p.description}. Technologies: {p.technologies}" for p in projects]
+    project_ids = [p.id for p in projects]
+    
+    try:
+        token = os.getenv('HUGGINGFACE_API_TOKEN')
+        if not token:
+            raise ValueError("Hugging Face API token is not set.")
+            
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        # Prepare the payload for the Sentence Similarity task
+        payload = {
+            "inputs": {
+                "source_sentence": query,
+                "sentences": project_docs
+            }
+        }
+        
+        response = requests.post(HUGGINGFACE_EMBEDDING_MODEL_URL, headers=headers, json=payload, timeout=20)
+        response.raise_for_status()
+        scores = response.json() # This will be a list of similarity scores
+
+        if not isinstance(scores, list):
+            # The API can sometimes return a dictionary with an error message
+            print(f"Unexpected response from Hugging Face API: {scores}")
+            raise ValueError("Invalid response format from embedding API.")
+
+        results = sorted(zip(project_ids, scores), key=lambda item: item[1], reverse=True)
+        
+        ranked_projects = [{'id': pid, 'score': float(score)} for pid, score in results if score > 0.3]
+        return Response(ranked_projects)
+
+    except Exception as e:
+        print(f"Error calling Hugging Face API: {e}")
+        # If the AI service fails, fall back to a simple keyword search.
+        # This makes the feature more resilient.
+        keywords = query.lower().split()
+        matched_ids = set()
+        for p in projects:
+            project_text = f"{p.title} {p.technologies}".lower()
+            if any(keyword in project_text for keyword in keywords):
+                matched_ids.add(p.id)
+        
+        fallback_projects = [{'id': pid, 'score': 1.0} for pid in matched_ids]
+        return Response(fallback_projects)
+
+# --- AI CAREER ASSISTANT (RAG) ---
+@api_view(['POST'])
+def career_chat(request):
+    """
+    Handles a chat request using a Retrieval-Augmented Generation (RAG) pattern.
+    """
+    user_question = request.data.get('question', '')
+    if not user_question:
+        return Response({'error': 'Question is required.'}, status=400)
+
+    # --- 1. RETRIEVAL ---
+    # Combine all your professional data into a "knowledge base".
+    projects = Project.objects.all()
+    posts = Post.objects.filter(is_published=True)
+    
+    knowledge_base_docs = \
+        [f"Project: {p.title}. Description: {p.description}. Technologies: {p.technologies}" for p in projects] + \
+        [f"Blog Post: {post.title}. Content: {post.content[:500]}" for post in posts] # Truncate content
+
+    # Use the Hugging Face API to find the most relevant documents
+    token = os.getenv('HUGGINGFACE_API_TOKEN')
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {"inputs": {"source_sentence": user_question, "sentences": knowledge_base_docs}}
+    
+    try:
+        response = requests.post(HUGGINGFACE_EMBEDDING_MODEL_URL, headers=headers, json=payload, timeout=20)
+        response.raise_for_status()
+        scores = response.json()
+        
+        # Combine documents with their scores and get the top 3
+        scored_docs = sorted(zip(knowledge_base_docs, scores), key=lambda item: item[1], reverse=True)
+        top_k_docs = [doc for doc, score in scored_docs[:3] if score > 0.3]
+        
+        if not top_k_docs:
+            context = "No specific context found."
+        else:
+            context = "\n---\n".join(top_k_docs)
+            
+    except Exception as e:
+        print(f"Error retrieving context from Hugging Face: {e}")
+        context = "Could not retrieve relevant context."
+
+    # --- 2. AUGMENTATION & 3. GENERATION ---
+    try:
+        client = Groq(api_key=os.getenv('GROQ_API_KEY'))
+        
+        system_prompt = (
+            "You are a professional, helpful career assistant for Maximoto, a skilled full-stack developer. "
+            "Your role is to answer questions from potential recruiters or clients. "
+            "Base your answers STRICTLY on the provided context. Do not make up information. "
+            "If the answer is not in the context, politely state that the information is not available in the provided documents. "
+            "Keep your answers concise and professional."
+        )
+
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Context:\n{context}\n\nQuestion:\n{user_question}"}
+            ],
+            model="llama3-8b-8192",
+        )
+        
+        ai_response = chat_completion.choices[0].message.content
+        return Response({"answer": ai_response})
+
+    except Exception as e:
+        print(f"Error calling Groq API: {e}")
+        return Response({'error': 'Failed to generate a response from the AI model.'}, status=502)
