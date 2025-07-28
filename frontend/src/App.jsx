@@ -2,6 +2,7 @@
 import React, { Suspense, lazy } from "react";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import ThemeToggle from "./components/ThemeToggle";
+import ChatAssistant from "./components/ChatAssistant";
 
 const Home = lazy(() => import("./pages/Home"));
 const BlogList = lazy(() => import("./pages/BlogList"));
@@ -46,6 +47,8 @@ function App() {
           <p>Built with Django, React, Nostr, and ₿</p>
           <p>© {new Date().getFullYear()} Maximoto. All Rights Reserved.</p>
         </footer>
+        {/* The Chat Assistant is self-contained and can be placed anywhere */}
+        <ChatAssistant />
       </div>
     </Router>
   );
