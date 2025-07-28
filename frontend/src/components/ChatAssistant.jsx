@@ -58,20 +58,20 @@ const ChatAssistant = () => {
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 bg-purple-600 text-white p-4 rounded-full shadow-lg transform hover:scale-110 transition-transform z-50"
+        className="fixed bottom-4 left-4 bg-purple-600 text-white p-4 rounded-full shadow-lg transform hover:scale-110 transition-transform z-50"
         aria-label="Toggle Chat Assistant"
       >
         {isOpen ? <FaTimes size={20} /> : <FaCommentDots size={20} />}
       </button>
 
       {isOpen && (
-        <div className="fixed bottom-20 right-4 w-full max-w-md h-[70vh] bg-white dark:bg-gray-800 shadow-2xl rounded-lg flex flex-col z-50 ring-1 ring-black/10 dark:ring-white/10">
+        <div className="fixed bottom-20 left-4 w-full max-w-md h-[70vh] bg-white dark:bg-gray-800 shadow-2xl rounded-lg flex flex-col z-50 ring-1 ring-black/10 dark:ring-white/10">
           <div className="p-4 border-b border-gray-200 dark:border-gray-700">
             <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">
               AI Career Assistant
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Ask about my projects and skills
+              Ask about my experience and certifications
             </p>
           </div>
 
