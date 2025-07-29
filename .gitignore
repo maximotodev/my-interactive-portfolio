@@ -64,3 +64,10 @@ frontend/.env.local
 frontend/.env.development.local
 frontend/.env.test.local
 frontend/.env.production.local
+
+# ==============================================================================
+# Docker / Containerization (Local Development Only)
+# ==============================================================================
+Dockerfile
+Dockerfile.dev
+docker-compose.yml
