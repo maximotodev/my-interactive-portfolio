@@ -356,51 +356,87 @@ def skill_match_view(request):
 
 
 # ==============================================================================
-# AI CAREER CHAT 14.0 (The Definitive Anti-Hallucination Agent)
+# AI CAREER CHAT 3.0 - DYNAMIC, ACCURATE, AND CONVERSATIONAL
 # ==============================================================================
 
 @api_view(['POST'])
 def career_chat(request):
     """
-    Handles a chat request with a definitive, strict prompt and an enriched
-    knowledge base to prevent hallucination and provide accurate, link-rich lists.
+    Handles a chat request using an advanced RAG pipeline.
+    - Dynamically builds a knowledge base from the entire API.
+    - Generates a data-driven tech stack.
+    - Instructs the AI to provide clickable links to evidence.
     """
     user_question = request.data.get('question', '')
-    if not user_question or not user_question.strip():
-        return Response({"answer": "Hello! I am Maximoto's AI portfolio assistant. How may I help you?", "sources": []})
+    if not user_question:
+        return Response({'error': 'Question is required.'}, status=400)
 
-    # --- 1. ENRICHED KNOWLEDGE BASE ---
-    projects = Project.objects.all().order_by('-id')
+    # --- 1. DYNAMIC KNOWLEDGE BASE ASSEMBLY ---
+    # Fetch all relevant data from the database.
+    projects = Project.objects.all()
     posts = Post.objects.filter(is_published=True)
-    certifications = Certification.objects.all().order_by('-date_issued')
+    certifications = Certification.objects.all()
     work_experiences = WorkExperience.objects.all()
 
-    knowledge_base_objects = []
-
-    # --- A. Guardrails & Essential Facts ---
-    knowledge_base_objects.append({"type": "Guardrail", "title": "Private Information Policy", "category": "private", "url": None, "text": "Information regarding private contact details, pay rates, salary history, age, or university grades is confidential and not available."})
-    knowledge_base_objects.append({"type": "Core Info", "title": "GitHub Profile", "category": "core", "url": "https://github.com/maximotodev", "text": "Maximoto's primary GitHub profile is located at github.com/maximotodev. This is where project repositories are hosted."})
+    knowledge_base_docs = []
     
-    # --- B. Detailed Documents for Each Item ---
-    for p in projects: knowledge_base_objects.append({"type": "Project", "title": p.title, "category": "projects", "url": p.live_url or p.repository_url, "text": f"Project Details for '{p.title}': The project is described as '{p.description}' and was built with {p.technologies}."})
-    for c in certifications: knowledge_base_objects.append({"type": "Certification", "title": c.name, "category": "certifications", "url": c.credential_url, "text": f"Certification Details for '{c.name}': This was issued by {c.issuing_organization}."})
-    for post in posts: knowledge_base_objects.append({"type": "Blog Post", "title": post.title, "category": "posts", "url": f"/blog/{post.slug}", "text": f"An excerpt from the blog post, article, or writing titled '{post.title}': {post.content[:700]}"})
-    for exp in work_experiences: knowledge_base_objects.append({"type": "Work Experience", "title": f"{exp.job_title} at {exp.company_name}", "category": "experience", "url": None, "text": f"Work experience details: At {exp.company_name}, Maximoto's role as {exp.job_title} included these responsibilities: {exp.responsibilities.replace(chr(10), ' ')}."})
+    # --- A. Professional Persona and Soft Skills ---
+    # This provides the AI with personality and answers for non-technical questions.
+    knowledge_base_docs.append(
+        "Professional Persona: Maximoto is a proactive, results-oriented Full-Stack and AI Engineer. "
+        "His soft skills include strong problem-solving, effective communication with both technical and non-technical stakeholders, "
+        "and a collaborative mindset focused on shipping high-quality products. He is deeply passionate about open-source technology, decentralization, and continuous learning."
+    )
 
-    # --- C. Enriched Master List Documents ---
-    if projects: knowledge_base_objects.append({"type": "Master List", "title": "List of All Projects", "category": "projects", "url": None, "text": f"This document contains a comprehensive list of all projects, portfolios, and showcases: {', '.join([p.title for p in projects])}."})
-    if certifications: knowledge_base_objects.append({"type": "Master List", "title": "List of All Certifications", "category": "certifications", "url": None, "text": f"This document contains a comprehensive list of all certifications and qualifications: {', '.join([c.name for c in certifications])}."})
-    if posts: knowledge_base_objects.append({"type": "Master List", "title": "List of All Writings", "category": "posts", "url": None, "text": f"This document contains a comprehensive list of all writings, blog posts, and articles by Maximoto: {', '.join([p.title for p in posts])}."})
+    # --- B. Dynamic Technology Stack (Data-Driven) ---
+    # This creates a single, authoritative document of all technologies used in projects.
+    all_technologies = set()
+    for project in projects:
+        # Split by comma, strip whitespace from each tech, and add to the set
+        techs = [tech.strip() for tech in project.technologies.split(',')]
+        all_technologies.update(techs)
+    
+    if all_technologies:
+        knowledge_base_docs.append(
+            f"Consolidated Tech Stack: Across his projects, Maximoto has demonstrated experience with the following technologies: {', '.join(sorted(list(all_technologies)))}."
+        )
 
-    knowledge_base_docs = [item['text'] for item in knowledge_base_objects]
+    # --- C. Work Experience ---
+    for exp in work_experiences:
+        end_date_str = exp.end_date.strftime('%b %Y') if exp.end_date else "Present"
+        start_date_str = exp.start_date.strftime('%b %Y')
+        knowledge_base_docs.append(
+            f"Work Experience: At {exp.company_name}, Maximoto worked as a {exp.job_title} ({start_date_str} - {end_date_str}). "
+            f"Key responsibilities included: {exp.responsibilities.replace(chr(10), ' ')}"
+        )
+    
+    # --- D. Projects (with Links) ---
+    for p in projects:
+        knowledge_base_docs.append(
+            f"Portfolio Project: '{p.title}'. Live URL: {p.live_url}, Repository URL: {p.repository_url}. "
+            f"Description: {p.description}"
+        )
 
-    # --- 2. RETRIEVAL & SOURCE IDENTIFICATION ---
+    # --- E. Certifications (with Links) ---
+    for c in certifications:
+        knowledge_base_docs.append(
+            f"Certificate: '{c.name}' from {c.issuing_organization}. Credential URL: {c.credential_url}."
+        )
+
+    # --- F. Blog Posts (with Links) ---
+    frontend_url = os.getenv('FRONTEND_URL', 'https://maximotodev.vercel.app')
+    for post in posts:
+        post_url = f"{frontend_url}/blog/{post.slug}"
+        knowledge_base_docs.append(
+            f"Blog Post: '{post.title}'. Post URL: {post_url}. Excerpt: {post.content[:500]}"
+        )
+
+    # --- 2. RETRIEVAL (Find the most relevant context) ---
+    # This logic remains the same, but it's now searching over a much better knowledge base.
     token = os.getenv('HUGGINGFACE_API_TOKEN')
     context = ""
-    relevant_sources = []
-    
     if not token:
-        context = "Error: The semantic search feature is not configured."
+        context = "Error: Semantic search is not configured (Hugging Face API token is missing)."
     else:
         headers = {"Authorization": f"Bearer {token}"}
         payload = {"inputs": {"source_sentence": user_question, "sentences": knowledge_base_docs}}
@@ -408,64 +444,53 @@ def career_chat(request):
             response = requests.post(HUGGINGFACE_EMBEDDING_MODEL_URL, headers=headers, json=payload, timeout=20)
             response.raise_for_status()
             scores = response.json()
-            if not isinstance(scores, list): raise ValueError("Invalid format from embedding API.")
+            if not isinstance(scores, list): raise ValueError("Invalid API response")
             
-            scored_objects = sorted(zip(knowledge_base_objects, scores), key=lambda item: item[1], reverse=True)
+            scored_docs = sorted(zip(knowledge_base_docs, scores), key=lambda item: item[1], reverse=True)
+            top_k_docs = [doc for doc, score in scored_docs[:5] if score > 0.3]
             
-            # --- Robust Link Generation Logic ---
-            top_result = scored_objects[0] if scored_objects else (None, 0)
-            # If the top result is a master list with high confidence, show all links from that category
-            if top_result[1] > 0.6 and top_result[0]['type'] == 'Master List':
-                category = top_result[0]['category']
-                if category == 'projects':
-                    for p in projects:
-                        if p.live_url or p.repository_url: relevant_sources.append({"type": "Project", "title": p.title, "url": p.live_url or p.repository_url})
-                elif category == 'certifications':
-                    for c in certifications:
-                        if c.credential_url: relevant_sources.append({"type": "Certification", "title": c.name, "url": c.credential_url})
-                elif category == 'posts':
-                    for post in posts:
-                        if post.slug: relevant_sources.append({"type": "Blog Post", "title": post.title, "url": f"/blog/{post.slug}"})
-            else: # Otherwise, find specific links from the most relevant documents
-                seen_urls = set()
-                for obj, score in scored_objects[:5]:
-                    if obj.get('url') and score > 0.35 and obj['url'] not in seen_urls:
-                        relevant_sources.append({"type": obj['type'], "title": obj['title'], "url": obj['url']})
-                        seen_urls.add(obj['url'])
-
-            top_k_docs = [obj['text'] for obj, score in scored_objects[:7] if score > 0.3]
-            context = "\n---\n".join(top_k_docs)
+            if top_k_docs:
+                context = "\n---\n".join(top_k_docs)
+            else:
+                context = "I searched my knowledge base but couldn't find a specific document about that."
         except Exception as e:
-            context = f"Error during semantic search: {e}"
+            context = f"Error: The connection to the semantic search service failed: {e}"
 
-    # --- 3. AUGMENTATION & GENERATION (The Final, Strictest System Prompt) ---
+    # --- 3. AUGMENT & GENERATE (With improved instructions) ---
     try:
         client = Groq(api_key=os.getenv('GROQ_API_KEY'))
         
+        # --- NEW, HIGHLY-DETAILED SYSTEM PROMPT ---
         system_prompt = (
-            "You are a factual AI agent for a developer's portfolio. Your ONLY job is to answer questions using the provided 'Context'. "
-            "You must follow these rules absolutely:\n"
-            "1.  **THE GOLDEN RULE:** Your single most important rule is to base all answers STRICTLY and SOLELY on the information within the 'Context' provided. You are forbidden from using any outside knowledge or making assumptions.\n"
-            "2.  **ANTI-HALLUCINATION RULE:** If the 'Context' does not contain a specific answer to the user's question, you MUST apologize and respond with: 'I do not have specific information on that topic.' You MUST NOT elaborate, or suggest alternatives.\n"
-            "3.  **FORMATTING RULE:**\n"
-            "    - For questions about a SINGLE SPECIFIC item (e.g., 'tell me about Tribev2'), you MUST provide a direct, detailed paragraph.\n"
-            "    - When the context provides a list of items (e.g., the 'List of all projects'), you MUST respond with a concise introductory sentence and a bulleted list (`* Item`).\n"
-            "4.  **TONE AND STYLE:** Be direct, professional, and concise. Do not use conversational filler. Do not ask questions.\n"
-            "5.  **DO NOT MENTION THE 'CONTEXT':** Never say 'Based on the context' or similar phrases. Present the information as known fact."
+            "You are 'Maxi', an eloquent and highly professional AI assistant for the developer Maximoto. "
+            "Your goal is to provide recruiters and clients with accurate, synthesized information from the provided 'Context', acting as a helpful guide to his skills and work. "
+            "Follow these rules meticulously:\n"
+            "1.  **Synthesize and Narrate:** Do not just repeat facts. Weave the information from the multiple 'Context' snippets into a smooth, conversational, and well-written paragraph. Narrate confidently (e.g., 'To build his projects, Maximoto leverages a robust stack...' instead of 'The context says...').\n"
+            "2.  **Provide Clickable Links (CRITICAL):** When you mention a project, blog post, or certification, you MUST check if the context provides a URL ('Live URL:', 'Repository URL:', 'Credential URL:', 'Post URL:'). If a URL exists, you MUST format it as a clickable Markdown link. For example: `[Project Title](Live URL)` or `[Read Post](Post URL)`.\n"
+            "3.  **Answer from Context ONLY:** Your answers must be based *strictly* on the information in the 'Context'. If the answer is not present, politely say that you don't have specific details on that topic but can discuss related areas you do know about.\n"
+            "4.  **Data-Driven Stack:** When asked about his tech stack, use the 'Consolidated Tech Stack' document from the context as your primary source of truth.\n"
+            "5.  **Be Proactive:** If the user gives a vague, one-word follow-up like 'yes' or 'tell me more', don't stop. Proactively choose the most interesting topic from your previous answer and elaborate on it, perhaps by providing more details about a specific project or skill.\n"
+            "6.  **Organize for Clarity:** Use Markdown headings (`### Backend Skills`) to structure answers to broad questions about skills or experience.\n"
+            "7.  **Embody the Persona:** Maintain a professional, confident, and helpful tone at all times. You are a showcase of Maximoto's ability to build polished AI applications."
         )
 
-        user_prompt = f"Context:\n{context}\n\nUser Question: {user_question}"
+        user_prompt = (
+            f"Please use the following context to answer my question. Remember to follow all the rules in your system prompt, especially providing clickable links where available.\n\n"
+            f"**Context:**\n{context}\n\n"
+            f"**My Question:** {user_question}"
+        )
 
         chat_completion = client.chat.completions.create(
-            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-            model="llama3-70b-8192",
-            temperature=0.0, # ZERO temperature for maximum factuality
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            model="llama3-8b-8192",
         )
-        ai_response = chat_completion.choices[0].message.content
         
-        response_data = {"answer": ai_response.strip(), "sources": relevant_sources}
-        return Response(response_data)
+        ai_response = chat_completion.choices[0].message.content
+        return Response({"answer": ai_response})
 
     except Exception as e:
         print(f"Error calling Groq API: {e}")
-        return Response({'error': 'Failed to generate a response from the AI model.'}, status=502)
+        return Response({'error': 'The AI model is currently unavailable. Please try again later.'}, status=502)
