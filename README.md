@@ -3,12 +3,10 @@ Generated markdown
 
 # Interactive Developer Portfolio
 
-<!-- Replace with a good screenshot of your portfolio! -->
-
 Welcome to the repository for my personal interactive portfolio web application. This project is a full-stack showcase of my skills in modern web development, backend architecture, and AI/ML integration. It serves as a dynamic, live resume and a testament to my ability to build complex, feature-rich applications from the ground up.
 
-**Live Frontend:** [`[your-live-frontend-url.vercel.app]`](https://[your-live-frontend-url.vercel.app])
-**Live Backend API:** [`[your-live-backend-url.onrender.com/api/`](https://[your-live-backend-url.onrender.com/api/])
+**Live Frontend:** [`[maximotodev.vercel.app]`](https://[maximotodev.vercel.app])
+**Live Backend API:** [`[https://my-portfolio-backend-z88p.onrender.com/api/`](https://[https://my-portfolio-backend-z88p.onrender.com/api/])
 
 ---
 
@@ -138,5 +136,5 @@ Re-enable the AI Skill Matcher on a hosting plan with more memory.
 Implement a full test suite for both backend and frontend.
 Add a "Contact Me" form that sends an email via an API.
 Enhance the UI with more animations using Framer Motion.
-Created by [Your Name].
+Created by maximotodev.
 ```
