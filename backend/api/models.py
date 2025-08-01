@@ -1,6 +1,19 @@
 # backend/api/models.py
 from django.db import models
 
+class WorkExperience(models.Model):
+    company_name = models.CharField(max_length=100)
+    job_title = models.CharField(max_length=100)
+    start_date = models.DateField()
+    end_date = models.DateField(blank=True, null=True, help_text="Leave blank if this is your current position")
+    responsibilities = models.TextField(help_text="Enter each responsibility on a new line. They will be formatted as bullet points.")
+    
+    class Meta:
+        ordering = ['-start_date'] # Show newest jobs first
+
+    def __str__(self):
+        return f"{self.job_title} at {self.company_name}"
+
 class Certification(models.Model):
     name = models.CharField(max_length=200)
     issuing_organization = models.CharField(max_length=100, default="Coursera")
@@ -30,13 +43,12 @@ class Post(models.Model):
     is_published = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ['-published_date'] # Show newest posts first
+        ordering = ['-published_date']
 
     def __str__(self):
         return self.title
 
     def save(self, *args, **kwargs):
-        # Auto-generate a slug from the title if one isn't provided
         if not self.slug:
             from django.utils.text import slugify
             self.slug = slugify(self.title)

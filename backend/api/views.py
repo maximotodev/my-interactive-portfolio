@@ -21,8 +21,9 @@ from bitcoinlib.wallets import Wallet, WalletError
 from groq import Groq
 
 # Local Imports
-from .models import Project, Certification, Post
-from .serializers import ProjectSerializer, CertificationSerializer, PostSerializer
+# --- IMPORT ALL YOUR MODELS ---
+from .models import Project, Certification, Post, WorkExperience
+from .serializers import ProjectSerializer, CertificationSerializer, PostSerializer, WorkExperienceSerializer
 
 # --- Configuration Constants ---
 GITHUB_USERNAME = "maximotodev"
@@ -30,9 +31,9 @@ NOSTR_RELAYS = ["wss://relay.damus.io", "wss://relay.primal.net", "wss://nos.lol
 CACHE_TIMEOUT_SECONDS = 3600  # 1 hour
 BITCOIN_WALLET_NAME = "MyPortfolioWallet"
 HUGGINGFACE_EMBEDDING_MODEL_URL = "https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2"
+
 # ==============================================================================
-# HELPER & SERVICE FUNCTIONS
-# ==============================================================================
+# HELPER & SERVICE FUNCTIONS # ==============================================================================
 
 def decode_npub(npub: str) -> str | None:
     """Decodes an 'npub' to hex using pynostr's PublicKey class."""
@@ -195,16 +196,20 @@ def fetch_mempool_data():
             "recommended_fees": fees_response.json(),
             "block_height": height_response.json(),
             "hashrate": hashrate_response.json().get('currentHashrate'),
-            # --- THIS IS THE CORRECTED LINE ---
-            # The key for the USD price in this endpoint is 'USD'
             "price": price_response.json().get('USD'),
         }
     except requests.RequestException as e:
         print(f"Error fetching mempool/price data: {e}")
         return None
+
 # ==============================================================================
 # API VIEWS
 # ==============================================================================
+
+class WorkExperienceViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = WorkExperience.objects.all()
+    serializer_class = WorkExperienceSerializer
+
 class ProjectViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Project.objects.all().order_by('-id')
     serializer_class = ProjectSerializer
@@ -293,7 +298,6 @@ def mempool_stats(request):
         return Response(data)
     return Response({'error': 'Failed to fetch data from mempool.space API.'}, status=status.HTTP_502_BAD_GATEWAY)
 
-# --- AI SKILL MATCHER 2.0 (API-POWERED) ---
 @api_view(['POST'])
 def skill_match_view(request):
     """
@@ -318,7 +322,6 @@ def skill_match_view(request):
             
         headers = {"Authorization": f"Bearer {token}"}
         
-        # Prepare the payload for the Sentence Similarity task
         payload = {
             "inputs": {
                 "source_sentence": query,
@@ -328,10 +331,9 @@ def skill_match_view(request):
         
         response = requests.post(HUGGINGFACE_EMBEDDING_MODEL_URL, headers=headers, json=payload, timeout=20)
         response.raise_for_status()
-        scores = response.json() # This will be a list of similarity scores
+        scores = response.json() 
 
         if not isinstance(scores, list):
-            # The API can sometimes return a dictionary with an error message
             print(f"Unexpected response from Hugging Face API: {scores}")
             raise ValueError("Invalid response format from embedding API.")
 
@@ -342,8 +344,6 @@ def skill_match_view(request):
 
     except Exception as e:
         print(f"Error calling Hugging Face API: {e}")
-        # If the AI service fails, fall back to a simple keyword search.
-        # This makes the feature more resilient.
         keywords = query.lower().split()
         matched_ids = set()
         for p in projects:
@@ -354,158 +354,117 @@ def skill_match_view(request):
         fallback_projects = [{'id': pid, 'score': 1.0} for pid in matched_ids]
         return Response(fallback_projects)
 
-# In backend/api/views.py, replace the entire career_chat function
+
+# ==============================================================================
+# AI CAREER CHAT 14.0 (The Definitive Anti-Hallucination Agent)
+# ==============================================================================
 
 @api_view(['POST'])
 def career_chat(request):
     """
-    Handles a chat request using a Retrieval-Augmented Generation (RAG) pattern
-    with an improved, more granular knowledge base and a "storyteller" persona.
+    Handles a chat request with a definitive, strict prompt and an enriched
+    knowledge base to prevent hallucination and provide accurate, link-rich lists.
     """
     user_question = request.data.get('question', '')
-    if not user_question:
-        return Response({'error': 'Question is required.'}, status=400)
+    if not user_question or not user_question.strip():
+        return Response({"answer": "Hello! I am Maximoto's AI portfolio assistant. How may I help you?", "sources": []})
 
-     # --- 1. KNOWLEDGE BASE CREATION (Comprehensive & Granular) ---
-    projects = Project.objects.all()
+    # --- 1. ENRICHED KNOWLEDGE BASE ---
+    projects = Project.objects.all().order_by('-id')
     posts = Post.objects.filter(is_published=True)
+    certifications = Certification.objects.all().order_by('-date_issued')
+    work_experiences = WorkExperience.objects.all()
+
+    knowledge_base_objects = []
+
+    # --- A. Guardrails & Essential Facts ---
+    knowledge_base_objects.append({"type": "Guardrail", "title": "Private Information Policy", "category": "private", "url": None, "text": "Information regarding private contact details, pay rates, salary history, age, or university grades is confidential and not available."})
+    knowledge_base_objects.append({"type": "Core Info", "title": "GitHub Profile", "category": "core", "url": "https://github.com/maximotodev", "text": "Maximoto's primary GitHub profile is located at github.com/maximotodev. This is where project repositories are hosted."})
     
-    knowledge_base_docs = []
+    # --- B. Detailed Documents for Each Item ---
+    for p in projects: knowledge_base_objects.append({"type": "Project", "title": p.title, "category": "projects", "url": p.live_url or p.repository_url, "text": f"Project Details for '{p.title}': The project is described as '{p.description}' and was built with {p.technologies}."})
+    for c in certifications: knowledge_base_objects.append({"type": "Certification", "title": c.name, "category": "certifications", "url": c.credential_url, "text": f"Certification Details for '{c.name}': This was issued by {c.issuing_organization}."})
+    for post in posts: knowledge_base_objects.append({"type": "Blog Post", "title": post.title, "category": "posts", "url": f"/blog/{post.slug}", "text": f"An excerpt from the blog post, article, or writing titled '{post.title}': {post.content[:700]}"})
+    for exp in work_experiences: knowledge_base_objects.append({"type": "Work Experience", "title": f"{exp.job_title} at {exp.company_name}", "category": "experience", "url": None, "text": f"Work experience details: At {exp.company_name}, Maximoto's role as {exp.job_title} included these responsibilities: {exp.responsibilities.replace(chr(10), ' ')}."})
 
-    # --- A. High-Level Professional Summary ---
-    knowledge_base_docs.append(
-        "Professional Summary: Maximoto is an AI/ML Engineer with a strong focus on full-stack development. "
-        "He is a seasoned Bitcoin maximalist with a deep understanding of its foundational principles. "
-        "He is currently advancing his expertise by enrolling in the IBM AI Engineering Professional Certificate program."
-    )
+    # --- C. Enriched Master List Documents ---
+    if projects: knowledge_base_objects.append({"type": "Master List", "title": "List of All Projects", "category": "projects", "url": None, "text": f"This document contains a comprehensive list of all projects, portfolios, and showcases: {', '.join([p.title for p in projects])}."})
+    if certifications: knowledge_base_objects.append({"type": "Master List", "title": "List of All Certifications", "category": "certifications", "url": None, "text": f"This document contains a comprehensive list of all certifications and qualifications: {', '.join([c.name for c in certifications])}."})
+    if posts: knowledge_base_objects.append({"type": "Master List", "title": "List of All Writings", "category": "posts", "url": None, "text": f"This document contains a comprehensive list of all writings, blog posts, and articles by Maximoto: {', '.join([p.title for p in posts])}."})
 
-    # --- B. Work Experience from Resume ---
-    knowledge_base_docs.append(
-        "Work Experience at Tribe BTC (Frontend Developer, Sep 2023 - Feb 2024): "
-        "Revamped a legacy HTML/CSS/JS project into a dynamic React application, which boosted user engagement by 40% using animations and carousels. "
-        "Optimized API requests with Axios, reducing data load times by 50% through techniques like skeleton loading and pagination. "
-        "Streamlined team collaboration with Git/GitHub, decreasing merge conflicts by 35%. "
-        "Initiated and implemented deployment automation, which slashed deployment durations by 50% and minimized errors by 75%."
-    )
-    knowledge_base_docs.append(
-        "Work Experience as a Freelance FullStack Developer (Mar 2023 - Present): "
-        "Designs and executes professional websites using HTML5, CSS3, and React, achieving 97% client satisfaction. "
-        "Secured 20% more contracts by boosting client organic search traffic by 35% through advanced SEO strategies. "
-        "Communicates effectively with clients through various channels including email and video conferencing."
-    )
+    knowledge_base_docs = [item['text'] for item in knowledge_base_objects]
 
-    # --- C. Detailed AI/ML Skills from IBM Certificate ---
-    knowledge_base_docs.append(
-        "Current Education (IBM AI Engineering Professional Certificate): "
-        "This program is designed for data scientists, ML engineers, and software engineers. "
-        "Built, trained, and deployed various deep learning architectures."
-    )
-    knowledge_base_docs.append(
-        "Specific Deep Learning Skills (IBM Certificate): "
-        "Gained hands-on experience with Convolutional Neural Networks (CNNs), Recurrent Networks (RNNs), Autoencoders, and Generative AI models including Large Language Models (LLMs)."
-    )
-    knowledge_base_docs.append(
-        "Machine Learning Concepts Mastery (IBM Certificate): "
-        "Mastered both supervised and unsupervised learning using Python with popular libraries like SciPy, ScikitLearn, Keras, PyTorch, and TensorFlow."
-    )
-    knowledge_base_docs.append(
-        "Applied AI/ML Project Experience (IBM Certificate): "
-        "Applied machine learning to industry problems involving object recognition, computer vision, text analytics, Natural Language Processing (NLP), and recommender systems. "
-        "Built Generative AI applications using LLMs and Retrieval-Augmented Generation (RAG) with frameworks like Hugging Face and LangChain."
-    )
-    knowledge_base_docs.append(
-        "LLM Development Experience (IBM Certificate): "
-        "Created and worked with LLMs like GPT and BERT. Developed transfer learning applications in NLP using LangChain, Hugging Face, and PyTorch. "
-        "Understands core concepts like positional encoding, masking, and the attention mechanism for document classification."
-    )
-    knowledge_base_docs.append(
-        "Practical AI Application Development (IBM Certificate): "
-        "Has experience setting up a Gradio interface for model interaction and constructing a Question-Answering bot using LangChain to answer questions from loaded documents."
-    )
-
-    # --- D. Other Certificates from Resume ---
-    knowledge_base_docs.append("Certificate: Google AI Essentials - Learned foundations of AI, machine learning, and ethical considerations. Applied AI tools to automate tasks.")
-    knowledge_base_docs.append("Certificate: Foundations of Cybersecurity (Google via Coursera) - Gained a strong understanding of core cybersecurity principles, including threat modeling, risk management, and incident response.")
-    knowledge_base_docs.append("Certificate: Google Professional Certificate - Used Python and Bash for automation scripts. Learned Object-Oriented Programming, Git/GitHub, Google Cloud fundamentals, and Puppet configuration management.")
-    knowledge_base_docs.append("Certificate: Scrimba Frontend Developer Career Path - Gained a well-rounded skill set in modern tooling like React and GitHub, alongside best practices in semantic HTML, JavaScript, and accessibility.")
-
-    # --- E. Project and Blog Post Data ---
-    for p in projects:
-        knowledge_base_docs.append(f"Regarding the portfolio project '{p.title}': its purpose is {p.description}, and the technologies used were {p.technologies}.")
-    for post in posts:
-        knowledge_base_docs.append(f"From the blog post titled '{post.title}': {post.content[:700]}")
-
-
-
-    # --- 2. RETRIEVAL (With Improved Error Handling) ---
+    # --- 2. RETRIEVAL & SOURCE IDENTIFICATION ---
     token = os.getenv('HUGGINGFACE_API_TOKEN')
-    context = "" # Start with an empty context
-
+    context = ""
+    relevant_sources = []
+    
     if not token:
-        # If the token is missing, we can't do retrieval. Set a specific error context.
-        print("ERROR: HUGGINGFACE_API_TOKEN is not set.")
-        context = "Error: The semantic search feature is not configured correctly because the Hugging Face API token is missing."
+        context = "Error: The semantic search feature is not configured."
     else:
         headers = {"Authorization": f"Bearer {token}"}
         payload = {"inputs": {"source_sentence": user_question, "sentences": knowledge_base_docs}}
-        
         try:
             response = requests.post(HUGGINGFACE_EMBEDDING_MODEL_URL, headers=headers, json=payload, timeout=20)
             response.raise_for_status()
             scores = response.json()
+            if not isinstance(scores, list): raise ValueError("Invalid format from embedding API.")
+            
+            scored_objects = sorted(zip(knowledge_base_objects, scores), key=lambda item: item[1], reverse=True)
+            
+            # --- Robust Link Generation Logic ---
+            top_result = scored_objects[0] if scored_objects else (None, 0)
+            # If the top result is a master list with high confidence, show all links from that category
+            if top_result[1] > 0.6 and top_result[0]['type'] == 'Master List':
+                category = top_result[0]['category']
+                if category == 'projects':
+                    for p in projects:
+                        if p.live_url or p.repository_url: relevant_sources.append({"type": "Project", "title": p.title, "url": p.live_url or p.repository_url})
+                elif category == 'certifications':
+                    for c in certifications:
+                        if c.credential_url: relevant_sources.append({"type": "Certification", "title": c.name, "url": c.credential_url})
+                elif category == 'posts':
+                    for post in posts:
+                        if post.slug: relevant_sources.append({"type": "Blog Post", "title": post.title, "url": f"/blog/{post.slug}"})
+            else: # Otherwise, find specific links from the most relevant documents
+                seen_urls = set()
+                for obj, score in scored_objects[:5]:
+                    if obj.get('url') and score > 0.35 and obj['url'] not in seen_urls:
+                        relevant_sources.append({"type": obj['type'], "title": obj['title'], "url": obj['url']})
+                        seen_urls.add(obj['url'])
 
-            if not isinstance(scores, list):
-                # Handle cases where the API returns an error message
-                print(f"ERROR: Unexpected response from Hugging Face API: {scores}")
-                raise ValueError("Invalid response format from embedding API.")
-            
-            scored_docs = sorted(zip(knowledge_base_docs, scores), key=lambda item: item[1], reverse=True)
-            top_k_docs = [doc for doc, score in scored_docs[:5] if score > 0.3]
-            
-            if top_k_docs:
-                context = "\n---\n".join(top_k_docs)
-            else:
-                # This now becomes a more specific message
-                context = "I searched through Maximoto's resume, projects, and writings, but I couldn't find a specific document that directly answers your question."
-                
+            top_k_docs = [obj['text'] for obj, score in scored_objects[:7] if score > 0.3]
+            context = "\n---\n".join(top_k_docs)
         except Exception as e:
-            print(f"ERROR: An error occurred while calling the Hugging Face API: {e}")
-            # Provide a very specific error context to the LLM
-            context = "Error: The connection to the semantic search service (Hugging Face API) failed. Please inform the site administrator."
+            context = f"Error during semantic search: {e}"
 
-    # --- 3. AUGMENTATION & 4. GENERATION (This is where we make the improvements) ---
+    # --- 3. AUGMENTATION & GENERATION (The Final, Strictest System Prompt) ---
     try:
         client = Groq(api_key=os.getenv('GROQ_API_KEY'))
         
-        # --- NEW, REFINED "STORYTELLER" SYSTEM PROMPT ---
         system_prompt = (
-            "You are 'Maxi', a professional and friendly AI assistant representing Maximoto, a skilled Full-Stack and AI Engineer. "
-            "Your primary goal is to help recruiters and potential clients understand Maximoto's skills and experience by having a natural conversation. "
-            "Follow these rules strictly:\n"
-            "1.  **Synthesize, Don't List:** Do not just list facts from the context. Weave the information from the provided 'Context' into a smooth, conversational paragraph. Use full sentences.\n"
-            "2.  **Be a Storyteller:** Instead of saying 'The context says...', narrate the information. For example, instead of 'Work Experience at Tribe BTC...', say 'At Tribe BTC, Maximoto took the lead on...'\n"
-            "3.  **Strictly Use Context:** Base your answers ONLY on the provided 'Context'. If the information is not in the context, politely state that you don't have details on that specific topic.\n"
-            "4.  **Organize Information:** When asked about broad topics like 'skills' or 'experience', use Markdown headings (like `### Frontend Development`) to organize the information clearly.\n"
-            "5.  **Be Personable:** Maintain a helpful and professional tone. You are here to help people learn about Maximoto."
+            "You are a factual AI agent for a developer's portfolio. Your ONLY job is to answer questions using the provided 'Context'. "
+            "You must follow these rules absolutely:\n"
+            "1.  **THE GOLDEN RULE:** Your single most important rule is to base all answers STRICTLY and SOLELY on the information within the 'Context' provided. You are forbidden from using any outside knowledge or making assumptions.\n"
+            "2.  **ANTI-HALLUCINATION RULE:** If the 'Context' does not contain a specific answer to the user's question, you MUST apologize and respond with: 'I do not have specific information on that topic.' You MUST NOT elaborate, or suggest alternatives.\n"
+            "3.  **FORMATTING RULE:**\n"
+            "    - For questions about a SINGLE SPECIFIC item (e.g., 'tell me about Tribev2'), you MUST provide a direct, detailed paragraph.\n"
+            "    - When the context provides a list of items (e.g., the 'List of all projects'), you MUST respond with a concise introductory sentence and a bulleted list (`* Item`).\n"
+            "4.  **TONE AND STYLE:** Be direct, professional, and concise. Do not use conversational filler. Do not ask questions.\n"
+            "5.  **DO NOT MENTION THE 'CONTEXT':** Never say 'Based on the context' or similar phrases. Present the information as known fact."
         )
 
-        # --- SLIGHTLY REFINED USER PROMPT ---
-        user_prompt = (
-            f"Please use the following context to answer my question. Remember to follow all the rules in your system prompt.\n\n"
-            f"**Context:**\n{context}\n\n"
-            f"**My Question:** {user_question}"
-        )
+        user_prompt = f"Context:\n{context}\n\nUser Question: {user_question}"
 
         chat_completion = client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            model="llama3-8b-8192", # This model is excellent at following instructions
+            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+            model="llama3-70b-8192",
+            temperature=0.0, # ZERO temperature for maximum factuality
         )
-        
         ai_response = chat_completion.choices[0].message.content
-        return Response({"answer": ai_response})
+        
+        response_data = {"answer": ai_response.strip(), "sources": relevant_sources}
+        return Response(response_data)
 
     except Exception as e:
         print(f"Error calling Groq API: {e}")
