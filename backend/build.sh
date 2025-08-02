@@ -13,7 +13,3 @@ python manage.py collectstatic --no-input
 
 # Apply any outstanding database migrations
 python manage.py migrate
-
-# Load initial data from your fixture (optional but recommended for first deploy)
-# This command finds and loads the initial_data.json fixture.
-python manage.py loaddata initial_data.json
