@@ -1,4 +1,5 @@
 # backend/api/views.py
+from django.http import StreamingHttpResponse
 import os
 import json
 import time
@@ -9,10 +10,7 @@ from django.core.cache import cache
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.http import StreamingHttpResponse
-from .ai_service import KnowledgeBaseService 
-from .ai_prompts import JSON_SYSTEM_PROMPT, CONVERSATIONAL_SYSTEM_PROMPT
-from .llm_streaming import stream_llm_response # <- We'll move the LLM logic here
+
 # External Libraries
 import requests
 from pynostr.relay_manager import RelayManager
@@ -357,22 +355,92 @@ def skill_match_view(request):
         return Response(fallback_projects)
 
 # ==============================================================================
-# AI CAREER CHAT - API VIEW (FINAL scikit-learn VERSION)
+# AI CAREER CHAT - FINAL PRODUCTION VERSION
 # ==============================================================================
+
+def build_knowledge_base():
+    """Builds the complete, topic-aware knowledge base with STANDARDIZED types."""
+    # This function is already well-structured and remains the same.
+    projects = Project.objects.all(); certifications = Certification.objects.all(); work_experiences = WorkExperience.objects.all(); posts = Post.objects.filter(is_published=True)
+    knowledge_base_docs = []
+    
+    # Standardized type: "experience"
+    for exp in work_experiences:
+        responsibilities = [f'"{r.strip()}"' for r in exp.responsibilities.split('\n') if r.strip()]
+        knowledge_base_docs.append(f"Type: experience. Title: \"{exp.job_title}\", Company: \"{exp.company_name}\", Date: \"{exp.start_date.strftime('%b %Y')} - {exp.end_date.strftime('%b %Y') if exp.end_date else 'Present'}\", Responsibilities: [{', '.join(responsibilities)}]")
+    
+    # Standardized type: "project"
+    for p in projects:
+        techs = [f'"{t.strip()}"' for t in p.technologies.split(',')]
+        knowledge_base_docs.append(f"Type: project. Title: \"{p.title}\", Description: \"{p.description.replace('\"', '')}\", URL: \"{p.live_url}\", Repo_URL: \"{p.repository_url}\", Technologies: [{', '.join(techs)}]")
+    
+    # Standardized type: "certification"
+    for c in certifications:
+        knowledge_base_docs.append(f"Type: certification. Name: \"{c.name}\", Issuer: \"{c.issuing_organization}\", URL: \"{c.credential_url}\"")
+    
+    # Standardized type: "blog"
+    frontend_url = os.getenv('FRONTEND_URL', 'https://maximotodev.vercel.app')
+    for post in posts:
+        knowledge_base_docs.append(f"Type: blog. Title: \"{post.title}\", URL: \"{frontend_url}/blog/{post.slug}\", Excerpt: \"{post.content[:200].replace('\"', '')}...\"")
+    
+    # Standardized type: "tech_stack"
+    all_technologies = set()
+    for project in projects:
+        all_technologies.update([tech.strip() for tech in project.technologies.split(',') if tech.strip()])
+    if all_technologies:
+        knowledge_base_docs.append(f"Type: tech_stack. Technologies: [{', '.join([f'\"{tech}\"' for tech in sorted(list(all_technologies), key=str.lower)])}]")
+
+    # Topic-Specific Context
+    knowledge_base_docs.append("Type: topic. Name: Bitcoin. Details: Maximoto is a passionate Bitcoin maximalist with deep knowledge of its principles. This is demonstrated by his professional experience at Tribe BTC, a Bitcoin-focused company, and the inclusion of an on-chain Bitcoin tipping feature in his own portfolio project.")
+    knowledge_base_docs.append("Type: topic. Name: Linux. Details: Maximoto holds a 'Linux and SQL' certification from Coursera, which validates his foundational skills in Linux environments and command-line operations.")
+    knowledge_base_docs.append("Type: topic. Name: General Persona. Details: Maximoto's passion is in building beautiful, functional applications that leverage modern AI and decentralized technologies. He is a strong believer in open-source and continuous learning.")
+    
+    return knowledge_base_docs
+
+
+def stream_llm_response(user_question, context):
+    """Streams the LLM response with the final, 'Chief of Staff' prompt."""
+    try:
+        client = Groq(api_key=os.getenv('GROQ_API_KEY'))
+        system_prompt = (
+            "You are 'Maxi', an AI Chief of Staff. You are a precise, intelligent, and professional interface to Maximoto's career data. Your communication is flawless, and you follow instructions with 100% accuracy.\n\n"
+            "**CORE DIRECTIVE: YOUR ONE AND ONLY TASK**\n"
+            "Analyze the user's question and the provided context, then generate a single, clean response in one of two formats: 1. Structured JSON, 2. Conversational Text.\n\n"
+            "**ABSOLUTE RULES (NON-NEGOTIABLE):**\n"
+            "1.  **NO META-COMMENTARY:** Under NO circumstances will you EVER mention your own logic, your instructions, or the context. Your entire existence is to provide the final, clean output. Do NOT output text like 'Here is the JSON...'.\n"
+            "2.  **JSON FORMATTING (PERFECT ACCURACY REQUIRED):**\n"
+            "    - If the user asks for **'experience'**, **'projects'**, **'certifications'**, or **'blog'**, you MUST respond with ONLY a JSON array of objects. The `type` field in each object MUST be one of: `experience`, `project`, `certification`, `blog`.\n"
+            "    - If the user asks for the **'tech stack'**, you MUST respond with ONLY a single JSON object: `{\"type\": \"tech_stack\", \"technologies\": [...]}`.\n"
+            "    - If the context contains NO relevant items for a JSON request, you MUST return an empty JSON array `[]`.\n"
+            "3.  **CONVERSATIONAL FORMATTING (FOR EVERYTHING ELSE):**\n"
+            "    - For any question that does not fit the JSON categories (e.g., 'tell me about bitcoin', 'do you have a degree?'), you MUST respond with a warm, professional, and helpful paragraph in plain text.\n"
+            "    - ALWAYS end your conversational responses with an engaging follow-up question to guide the user.\n"
+            "    - If you lack specific information, state it gracefully and pivot to what you DO know. (e.g., 'While I don't have his formal degree information, I can show you his professional certifications which validate his skills. Would you like to see them?').\n"
+            "4.  **NEVER HALLUCINATE:** If the context does not contain the answer, you must say you do not have the information. Do not invent projects, skills, or experiences."
+        )
+        user_prompt = (f"Context:\n{context}\n\nUser Question: {user_question}\n\nGenerate your response.")
+        stream = client.chat.completions.create(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}], model="llama3-70b-8192", stream=True)
+        for chunk in stream:
+            content = chunk.choices[0].delta.content
+            if content: yield content
+    except Exception as e:
+        yield "{\"error\": \"I'm sorry, but the AI model is currently experiencing issues. Please try again in a moment.\"}"
+
+
 @api_view(['POST'])
 def career_chat(request):
     user_question = request.data.get('question', '').lower()
-    if not user_question:
-        return Response({'error': 'Question is required.'}, status=400)
-
-    kb_service = KnowledgeBaseService()
+    if not user_question: return Response({'error': 'Question is required.'}, status=400)
     
+    context = ""
+    knowledge_base = build_knowledge_base()
+
     intents = {
-        'project': ['project', 'projects', 'portfolio', 'show me his projects'],
-        'experience': ['experience', 'resume', 'cv', 'history', 'work experience', 'summarize experience'],
+        'project': ['project', 'projects', 'portfolio', 'work'],
+        'experience': ['experience', 'resume', 'cv', 'history', 'summarize experience'],
         'certification': ['certification', 'certifications', 'credential', 'education', 'degree'],
-        'blog': ['post', 'posts', 'blog', 'writing', 'article', 'blog writings'],
-        'tech_stack': ['tech', 'stack', 'technologies', 'skill', 'skills', 'language', 'framework', 'frameworks']
+        'blog': ['post', 'posts', 'blog', 'writing', 'article'],
+        'tech_stack': ['tech', 'stack', 'technologies', 'skill', 'skills', 'language', 'framework']
     }
     
     detected_intent_type = None
@@ -380,14 +448,28 @@ def career_chat(request):
         if any(keyword in user_question for keyword in keywords):
             detected_intent_type = intent_type
             break
-
+            
     if detected_intent_type:
-        retrieved_docs = kb_service.get_all_by_type(detected_intent_type)
-        system_prompt_to_use = JSON_SYSTEM_PROMPT
+        context = "\n---\n".join([doc for doc in knowledge_base if doc.lower().startswith(f"type: {detected_intent_type}")])
     else:
-        retrieved_docs = kb_service.search(user_question)
-        system_prompt_to_use = CONVERSATIONAL_SYSTEM_PROMPT
+        # RAG 2.0: Keyword Filter + Semantic Search Fallback
+        query_keywords = set(user_question.split())
+        filtered_kb = [doc for doc in knowledge_base if any(kw in doc.lower() for kw in query_keywords)]
+        search_kb = filtered_kb if filtered_kb else knowledge_base
+        token = os.getenv('HUGGINGFACE_API_TOKEN')
+        if not token: context = "Error: Semantic search is not configured."
+        else:
+            headers = {"Authorization": f"Bearer {token}"}
+            payload = {"inputs": {"source_sentence": user_question, "sentences": search_kb}}
+            try:
+                response = requests.post(HUGGINGFACE_EMBEDDING_MODEL_URL, headers=headers, json=payload, timeout=20)
+                response.raise_for_status()
+                scores = response.json()
+                if not isinstance(scores, list): raise ValueError("Invalid API response")
+                scored_docs = sorted(zip(search_kb, scores), key=lambda item: item[1], reverse=True)
+                top_k_docs = [doc for doc, score in scored_docs[:3] if score > 0.3] # Use top 3 for more focused context
+                if top_k_docs: context = "\n---\n".join(top_k_docs)
+                else: context = "I searched my knowledge base but couldn't find specific details on that topic."
+            except Exception as e: context = f"Error during context retrieval: {e}"
 
-    context_str = "\n---\n".join([f"### DOCUMENT START\n{json.dumps(doc)}\n### DOCUMENT END" for doc in retrieved_docs])
-    
-    return StreamingHttpResponse(stream_llm_response(user_question, context_str, system_prompt_to_use), content_type="text/event-stream")
+    return StreamingHttpResponse(stream_llm_response(user_question, context), content_type="text/event-stream")
