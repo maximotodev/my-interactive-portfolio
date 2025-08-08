@@ -3,6 +3,9 @@
 import os
 import sys
 
+# --- ADD THIS LINE TO SILENCE THE HUGGING FACE WARNING ---
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+# ---------------------------------------------------------
 
 def main():
     """Run administrative tasks."""
