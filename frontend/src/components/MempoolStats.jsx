@@ -45,9 +45,12 @@ const MempoolStats = () => {
       }
     };
     fetchData();
-    const intervalId = setInterval(fetchData, 30000);
+    // --- NEW: Auto-refresh every 60 seconds ---
+    const intervalId = setInterval(fetchData, 60000); // 60000 ms = 1 minute
+
+    // Cleanup function to stop the interval when the component unmounts
     return () => clearInterval(intervalId);
-  }, [isLoading]);
+  }, [isLoading]); // Keep isLoading in the dependency array
 
   if (isLoading) {
     return (

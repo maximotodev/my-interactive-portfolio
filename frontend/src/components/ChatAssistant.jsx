@@ -213,6 +213,10 @@ const ChatAssistant = () => {
   const handleSend = async (messageText) => {
     const text = messageText.trim();
     if (!text || isLoading) return;
+    // --- NEW: Grab the recent chat history ---
+    // Get the last 4 messages (2 user, 2 assistant) to provide context
+    const history = messages.slice(-4);
+
     setMessages((prev) => [
       ...prev,
       { role: "user", content: text },
@@ -224,7 +228,7 @@ const ChatAssistant = () => {
       const response = await fetch(`${API_URL}/api/chat/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: text }),
+        body: JSON.stringify({ question: text, history: history }),
       });
       if (!response.ok) throw new Error("Request failed");
       const fullResponse = await response.text();

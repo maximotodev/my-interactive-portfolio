@@ -69,7 +69,29 @@ if IS_PRODUCTION:
     SECURE_HSTS_PRELOAD = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
 
+# ==============================================================================
+# CACHING CONFIGURATION (WITH REDIS FOR PRODUCTION)
+# ==============================================================================
 
+# Use Redis for caching if the REDIS_URL is available (in production on Render)
+if 'REDIS_URL' in os.environ:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": os.environ.get('REDIS_URL'),
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            }
+        }
+    }
+# Otherwise, use the simple in-memory cache for local development
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+        }
+    }
 # ==============================================================================
 # DJANGO APPLICATIONS AND MIDDLEWARE
 # ==============================================================================
