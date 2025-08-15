@@ -398,10 +398,17 @@ def build_knowledge_base():
     return knowledge_base_docs
 
 
-def stream_llm_response(user_question, context):
-    """Streams the LLM response with the final, 'Chief of Staff' prompt."""
+# --- Modify the stream_llm_response function ---
+def stream_llm_response(user_question, context, chat_history):
     try:
         client = Groq(api_key=os.getenv('GROQ_API_KEY'))
+        
+        # --- NEW: Format the history for the LLM ---
+        formatted_history = ""
+        if chat_history:
+            for message in chat_history:
+                role = "User" if message['role'] == 'user' else "Assistant"
+                formatted_history += f"{role}: {message['content']}\n"
         system_prompt = (
             "You are 'Maxi', an AI Chief of Staff. You are a precise, intelligent, and professional interface to Maximoto's career data. Your communication is flawless, and you follow instructions with 100% accuracy.\n\n"
             "**CORE DIRECTIVE: YOUR ONE AND ONLY TASK**\n"
@@ -418,20 +425,34 @@ def stream_llm_response(user_question, context):
             "    - If you lack specific information, state it gracefully and pivot to what you DO know. (e.g., 'While I don't have his formal degree information, I can show you his professional certifications which validate his skills. Would you like to see them?').\n"
             "4.  **NEVER HALLUCINATE:** If the context does not contain the answer, you must say you do not have the information. Do not invent projects, skills, or experiences."
         )
-        user_prompt = (f"Context:\n{context}\n\nUser Question: {user_question}\n\nGenerate your response.")
-        stream = client.chat.completions.create(messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}], model="llama3-70b-8192", stream=True)
+        user_prompt = (
+            "**Previous Conversation History (for context):**\n"
+            f"{formatted_history}\n\n" # <-- Prepend the history
+            "**New Context (for answering the current question):**\n"
+            f"{context}\n\n"
+            f"**Current User Question:** {user_question}\n\n"
+            "Generate your response based on all of the above and your rules."
+        )
+        
+        stream = client.chat.completions.create(
+            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+            model="llama3-70b-8192",
+            stream=True,
+        )
         for chunk in stream:
             content = chunk.choices[0].delta.content
             if content: yield content
+            
     except Exception as e:
-        yield "{\"error\": \"I'm sorry, but the AI model is currently experiencing issues. Please try again in a moment.\"}"
+        yield "{\"error\": \"I'm sorry, but the AI model is currently experiencing issues.\"}"
+
 
 
 @api_view(['POST'])
 def career_chat(request):
     user_question = request.data.get('question', '').lower()
+    chat_history = request.data.get('history', [])
     if not user_question: return Response({'error': 'Question is required.'}, status=400)
-    
     context = ""
     knowledge_base = build_knowledge_base()
 
@@ -472,4 +493,4 @@ def career_chat(request):
                 else: context = "I searched my knowledge base but couldn't find specific details on that topic."
             except Exception as e: context = f"Error during context retrieval: {e}"
 
-    return StreamingHttpResponse(stream_llm_response(user_question, context), content_type="text/event-stream")
+    return StreamingHttpResponse(stream_llm_response(user_question, context, chat_history), content_type="text/event-stream")

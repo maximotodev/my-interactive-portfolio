@@ -7,6 +7,7 @@ import ChatAssistant from "./components/ChatAssistant";
 const Home = lazy(() => import("./pages/Home"));
 const BlogList = lazy(() => import("./pages/BlogList"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
 
 const PageLoader = () => (
   <div className="flex justify-center items-center h-64">
@@ -31,6 +32,12 @@ function App() {
           >
             Blog
           </Link>
+          <Link
+            to="/dashboard"
+            className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 font-medium"
+          >
+            Dashboard
+          </Link>
         </nav>
 
         <Suspense fallback={<PageLoader />}>
@@ -38,6 +45,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/blog" element={<BlogList />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
+            <Route path="/dashboard" element={<Dashboard />} />
           </Routes>
         </Suspense>
 
