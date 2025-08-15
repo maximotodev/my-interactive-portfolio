@@ -16,6 +16,9 @@ Thumbs.db
 *.sublime-project
 *.sublime-workspace
 
+# Ignore database backup files
+*.dump
+
 # ==============================================================================
 # Python / Django (for the 'backend' folder)
 # ==============================================================================
