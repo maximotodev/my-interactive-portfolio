@@ -22,8 +22,8 @@ from groq import Groq
 
 # Local Imports
 # --- IMPORT ALL YOUR MODELS ---
-from .models import Project, Certification, Post, WorkExperience
-from .serializers import ProjectSerializer, CertificationSerializer, PostSerializer, WorkExperienceSerializer
+from .models import Project, Certification, Post, WorkExperience, Tag
+from .serializers import ProjectSerializer, CertificationSerializer, PostSerializer, WorkExperienceSerializer, TagSerializer
 
 # --- Configuration Constants ---
 GITHUB_USERNAME = "maximotodev"
@@ -205,23 +205,53 @@ def fetch_mempool_data():
 # ==============================================================================
 # API VIEWS
 # ==============================================================================
+class TagViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    A viewset for listing all available tags.
+    """
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+
 
 class WorkExperienceViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = WorkExperience.objects.all()
     serializer_class = WorkExperienceSerializer
 
 class ProjectViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Project.objects.all().order_by('-id')
     serializer_class = ProjectSerializer
+    queryset = Project.objects.all().order_by('-id')
+
+    # --- 2. ADD FILTERING LOGIC ---
+    def get_queryset(self):
+        """
+        Optionally filter the projects by a 'tag' query parameter.
+        """
+        queryset = super().get_queryset()
+        tag_slug = self.request.query_params.get('tag')
+        if tag_slug:
+            # Filter the queryset to only include projects that have a tag with the given slug
+            queryset = queryset.filter(tags__slug=tag_slug)
+        return queryset
 
 class CertificationViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Certification.objects.all().order_by('-date_issued')
     serializer_class = CertificationSerializer
 
 class PostViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Post.objects.filter(is_published=True)
     serializer_class = PostSerializer
+    queryset = Post.objects.filter(is_published=True)
     lookup_field = 'slug'
+
+    # --- 3. ADD FILTERING LOGIC HERE TOO ---
+    def get_queryset(self):
+        """
+        Optionally filter the posts by a 'tag' query parameter.
+        """
+        queryset = super().get_queryset()
+        tag_slug = self.request.query_params.get('tag')
+        if tag_slug:
+            queryset = queryset.filter(tags__slug=tag_slug)
+        return queryset
 
 @api_view(['GET'])
 def bitcoin_address(request):

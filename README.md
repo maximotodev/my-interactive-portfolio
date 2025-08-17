@@ -174,3 +174,10 @@ These are small changes that make a huge difference in how professional and "pre
    Install django-redis in your requirements.txt.
    Configure Django's caching backend in settings.py to use the Redis URL provided by Render.
    Your existing caching logic (from django.core.cache import cache) will now automatically use this powerful new backend instead of the in-memory cache, making it persistent and much more effective. This is a huge professional skill to demonstrate.
+
+Roadmap Recommendation
+Start with the Tagging System. It's a foundational feature that improves your portfolio's structure and demonstrates core backend skills.
+
+Then, implement Storing AI Embeddings. This is the single most impressive feature you can add. It builds on your existing AI work and elevates it to a professional, production-grade architecture.
+
+Finally, add the "Likes" feature. This is a fun, user-facing feature that rounds out your skill set.

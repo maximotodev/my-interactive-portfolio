@@ -1,6 +1,12 @@
 # backend/api/admin.py
 from django.contrib import admin
-from .models import Project, Certification, Post, WorkExperience
+from .models import Project, Certification, Post, WorkExperience, Tag
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug')
+    # This will automatically create the URL-friendly slug from the name field
+    prepopulated_fields = {'slug': ('name',)}
 
 @admin.register(WorkExperience)
 class WorkExperienceAdmin(admin.ModelAdmin):
@@ -10,6 +16,8 @@ class WorkExperienceAdmin(admin.ModelAdmin):
 class ProjectAdmin(admin.ModelAdmin):
     list_display = ('title', 'technologies', 'repository_url', 'live_url')
     search_fields = ('title', 'description', 'technologies')
+    filter_horizontal = ('tags',)
+
 
 @admin.register(Certification)
 class CertificationAdmin(admin.ModelAdmin):
@@ -22,3 +30,4 @@ class PostAdmin(admin.ModelAdmin):
     list_filter = ('is_published', 'published_date')
     search_fields = ('title', 'content')
     prepopulated_fields = {'slug': ('title',)}
+    filter_horizontal = ('tags',)

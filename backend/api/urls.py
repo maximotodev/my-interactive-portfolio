@@ -6,6 +6,7 @@ from .views import (
     CertificationViewSet,
     PostViewSet,
     WorkExperienceViewSet,
+    TagViewSet,
     github_stats,
     github_contributions,
     nostr_profile,
@@ -17,10 +18,11 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r'projects', ProjectViewSet)
+router.register(r'projects', ProjectViewSet, basename='project')
 router.register(r'certifications', CertificationViewSet)
-router.register(r'posts', PostViewSet)
+router.register(r'posts', PostViewSet, basename='post')
 router.register(r'work-experience', WorkExperienceViewSet)
+router.register(r'tags', TagViewSet) 
 
 urlpatterns = [
     path('', include(router.urls)),

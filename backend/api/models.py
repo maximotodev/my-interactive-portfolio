@@ -1,6 +1,19 @@
 # backend/api/models.py
 from django.db import models
+from django.utils.text import slugify
+# --- NEW TAG MODEL ---
+class Tag(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+    slug = models.SlugField(max_length=50, unique=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+    
 class WorkExperience(models.Model):
     company_name = models.CharField(max_length=100)
     job_title = models.CharField(max_length=100)
@@ -30,7 +43,7 @@ class Project(models.Model):
     repository_url = models.URLField(blank=True, null=True)
     live_url = models.URLField(blank=True, null=True)
     image = models.URLField(max_length=500, blank=True, null=True)
-
+    tags = models.ManyToManyField(Tag, blank=True, related_name="projects")
     def __str__(self):
         return self.title
 
@@ -41,6 +54,7 @@ class Post(models.Model):
     published_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
     is_published = models.BooleanField(default=False)
+    tags = models.ManyToManyField(Tag, blank=True, related_name="posts")
 
     class Meta:
         ordering = ['-published_date']
