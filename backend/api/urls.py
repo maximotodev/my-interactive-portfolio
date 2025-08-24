@@ -15,6 +15,7 @@ from .views import (
     mempool_stats,
     skill_match_view,
     career_chat,
+    search_view,
 )
 
 router = DefaultRouter()
@@ -26,6 +27,7 @@ router.register(r'tags', TagViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('search/', search_view, name='search'),
     path('github-stats/', github_stats, name='github-stats'),
     path('github-contributions/', github_contributions, name='github-contributions'),
     path('nostr-profile/', nostr_profile, name='nostr-profile'),

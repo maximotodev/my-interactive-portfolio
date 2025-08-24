@@ -7,6 +7,8 @@ const API = axios.create({
   baseURL: `${API_URL}/api/`,
 });
 
+export const performSearch = (query) => API.get(`search/?q=${query}`);
+
 // --- MODIFIED: fetchProjects now accepts an optional tag slug ---
 export const fetchProjects = (tagSlug = null) => {
   let url = "projects/";
@@ -16,7 +18,6 @@ export const fetchProjects = (tagSlug = null) => {
   return API.get(url);
 };
 
-// --- NEW: A function to fetch all available tags ---
 export const fetchTags = () => API.get("tags/");
 
 export const fetchCertifications = () => API.get("certifications/");
