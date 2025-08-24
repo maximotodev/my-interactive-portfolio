@@ -4,17 +4,14 @@ import { fetchProjects } from "../api";
 import FadeIn from "./FadeIn";
 import ProjectListSkeleton from "./ProjectListSkeleton";
 
-// --- MODIFIED: This is now a "controlled" component ---
 const ProjectList = ({ selectedTag, onTagSelect, onClearFilter }) => {
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // This effect now re-runs whenever `selectedTag` changes
   useEffect(() => {
     const getProjects = async () => {
       setIsLoading(true);
       try {
-        // Pass the tag's slug to the API call
         const { data } = await fetchProjects(selectedTag?.slug);
         setProjects(data);
       } catch (error) {
@@ -32,7 +29,6 @@ const ProjectList = ({ selectedTag, onTagSelect, onClearFilter }) => {
 
   return (
     <section className="my-12">
-      {/* --- NEW: Display the current filter status --- */}
       {selectedTag && (
         <div className="text-center mb-10 p-4 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
           <p className="text-lg text-purple-800 dark:text-purple-200">
@@ -66,18 +62,24 @@ const ProjectList = ({ selectedTag, onTagSelect, onClearFilter }) => {
                   {project.description}
                 </p>
 
-                {/* --- NEW: Display the tags for this project --- */}
+                {/* --- THIS IS THE REFACTORED UI --- */}
+                {/* We now map over the 'tags' array to render clickable pills */}
                 {project.tags && project.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {project.tags.map((tag) => (
-                      <button
-                        key={tag.slug}
-                        onClick={() => onTagSelect(tag)}
-                        className="px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-200 rounded-full hover:bg-purple-200 dark:hover:bg-purple-700 transition-colors"
-                      >
-                        {tag.name}
-                      </button>
-                    ))}
+                  <div className="mt-4">
+                    <h4 className="text-sm font-bold text-gray-600 dark:text-gray-400 mb-2">
+                      Technologies & Skills:
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {project.tags.map((tag) => (
+                        <button
+                          key={tag.slug}
+                          onClick={() => onTagSelect(tag)}
+                          className="px-2.5 py-0.5 bg-gray-200 dark:bg-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-200 rounded-full hover:bg-purple-200 dark:hover:bg-purple-700 hover:text-purple-800 dark:hover:text-white transition-colors"
+                        >
+                          {tag.name}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
 

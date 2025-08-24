@@ -6,6 +6,7 @@ import time
 from datetime import datetime, timedelta
 
 # Django & DRF Imports
+from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from django.core.cache import cache
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
@@ -252,7 +253,47 @@ class PostViewSet(viewsets.ReadOnlyModelViewSet):
         if tag_slug:
             queryset = queryset.filter(tags__slug=tag_slug)
         return queryset
+    
+# --- NEW: NATIVE Full-Text Search API View ---
+@api_view(['GET'])
+def search_view(request):
+    """
+    Performs a full-text search across projects and posts using
+    Django's native PostgreSQL integration.
+    """
+    query_param = request.GET.get('q', '')
+    if not query_param:
+        return Response({"error": "A 'q' query parameter is required."}, status=400)
 
+    # Use SearchQuery to parse the user's input safely
+    search_query = SearchQuery(query_param)
+
+    # --- Search Projects ---
+    # Create a SearchVector on the fly, combining the fields we want to search
+    project_vector = SearchVector('title', 'description', 'tags__name', weight='A')
+    
+    # Annotate each project with a 'rank' based on how well it matches the query
+    project_results = Project.objects.annotate(
+        rank=SearchRank(project_vector, search_query)
+    ).filter(rank__gte=0.1).order_by('pk', '-rank').distinct('pk')
+
+    # --- Search Posts ---
+    post_vector = SearchVector('title', 'content', 'tags__name', weight='B') # Give posts a slightly lower weight
+
+    post_results = Post.objects.annotate(
+        rank=SearchRank(post_vector, search_query)
+    ).filter(is_published=True, rank__gte=0.1).order_by('pk', '-rank').distinct('pk')
+
+
+    # Serialize the ranked results
+    project_serializer = ProjectSerializer(project_results, many=True)
+    post_serializer = PostSerializer(post_results, many=True)
+
+    # Combine and return the final data
+    return Response({
+        'projects': project_serializer.data,
+        'posts': post_serializer.data
+    })
 @api_view(['GET'])
 def bitcoin_address(request):
     cache_key = f"bitcoin_address_{BITCOIN_WALLET_NAME}"

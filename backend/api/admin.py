@@ -14,8 +14,8 @@ class WorkExperienceAdmin(admin.ModelAdmin):
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ('title', 'technologies', 'repository_url', 'live_url')
-    search_fields = ('title', 'description', 'technologies')
+    list_display = ('title', 'repository_url', 'live_url')
+    search_fields = ('title', 'description', 'tags__name')
     filter_horizontal = ('tags',)
 
 
