@@ -432,7 +432,7 @@ def skill_match_view(request):
 def build_knowledge_base():
     """Builds the complete, topic-aware knowledge base with STANDARDIZED types."""
     # This function is already well-structured and remains the same.
-    projects = Project.objects.all(); certifications = Certification.objects.all(); work_experiences = WorkExperience.objects.all(); posts = Post.objects.filter(is_published=True)
+    projects = Project.objects.prefetch_related('tags').all(); certifications = Certification.objects.all(); work_experiences = WorkExperience.objects.all(); posts = Post.objects.filter(is_published=True)
     knowledge_base_docs = []
     
     # Standardized type: "experience"
@@ -442,7 +442,8 @@ def build_knowledge_base():
     
     # Standardized type: "project"
     for p in projects:
-        techs = [f'"{t.strip()}"' for t in p.technologies.split(',')]
+        # Get all tag names for the current project
+        techs = [f'"{tag.name}"' for tag in p.tags.all()]
         knowledge_base_docs.append(f"Type: project. Title: \"{p.title}\", Description: \"{p.description.replace('\"', '')}\", URL: \"{p.live_url}\", Repo_URL: \"{p.repository_url}\", Technologies: [{', '.join(techs)}]")
     
     # Standardized type: "certification"
@@ -455,12 +456,13 @@ def build_knowledge_base():
         knowledge_base_docs.append(f"Type: blog. Title: \"{post.title}\", URL: \"{frontend_url}/blog/{post.slug}\", Excerpt: \"{post.content[:200].replace('\"', '')}...\"")
     
     # Standardized type: "tech_stack"
+    # The tech stack consolidation now also reads from the tags.
     all_technologies = set()
     for project in projects:
-        all_technologies.update([tech.strip() for tech in project.technologies.split(',') if tech.strip()])
+        # Use the related manager again
+        all_technologies.update([tag.name for tag in project.tags.all()])
     if all_technologies:
         knowledge_base_docs.append(f"Type: tech_stack. Technologies: [{', '.join([f'\"{tech}\"' for tech in sorted(list(all_technologies), key=str.lower)])}]")
-
     # Topic-Specific Context
     knowledge_base_docs.append("Type: topic. Name: Bitcoin. Details: Maximoto is a passionate Bitcoin maximalist with deep knowledge of its principles. This is demonstrated by his professional experience at Tribe BTC, a Bitcoin-focused company, and the inclusion of an on-chain Bitcoin tipping feature in his own portfolio project.")
     knowledge_base_docs.append("Type: topic. Name: Linux. Details: Maximoto holds a 'Linux and SQL' certification from Coursera, which validates his foundational skills in Linux environments and command-line operations.")
