@@ -11,7 +11,8 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
+# --- NEW: Define the default Groq model ---
+GROQ_MODEL_NAME = os.getenv('GROQ_MODEL_NAME', 'llama-3.1-8b-instant')
 # ==============================================================================
 # CORE SETTINGS
 # ==============================================================================
