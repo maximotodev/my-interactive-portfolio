@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { fetchGithubStats } from "../api";
 import { useDebounce } from "../hooks/useDebounce";
 import { performSearch } from "../api";
+import ContactForm from "../components/ContactForm";
 import NostrProfile from "../components/NostrProfile";
 import GithubStats from "../components/GithubStats";
 import BitcoinTip from "../components/BitcoinTip";
@@ -139,6 +140,9 @@ const Home = () => {
 
             <FadeIn delay={700}>
               <CertificationList />
+            </FadeIn>
+            <FadeIn delay={800}>
+              <ContactForm />
             </FadeIn>
           </main>
         </>

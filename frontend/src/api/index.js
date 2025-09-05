@@ -32,3 +32,6 @@ export const fetchMempoolStats = () => API.get("mempool-stats/");
 export const postChatMessage = (question, history) =>
   API.post("chat/", { question, history });
 export const matchSkills = (query) => API.post("skill-match/", { query });
+export const submitContactForm = (formData) => API.post("contact/", formData);
+export const submitNostrContactForm = (formData) =>
+  API.post("nostr-contact/", formData);
