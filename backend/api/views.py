@@ -10,22 +10,23 @@ from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from django.conf import settings
 from django.core.cache import cache
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, throttle_classes
+from rest_framework.throttling import AnonRateThrottle
 from rest_framework.response import Response
 
 # External Libraries
 import requests
 from pynostr.relay_manager import RelayManager
 from pynostr.filters import FiltersList, Filters
-from pynostr.event import EventKind
-from pynostr.key import PublicKey
+from pynostr.event import Event, EventKind
+from pynostr.key import PrivateKey, PublicKey
 from bitcoinlib.wallets import Wallet, WalletError
 from groq import Groq
 
 # Local Imports
 # --- IMPORT ALL YOUR MODELS ---
-from .models import Project, Certification, Post, WorkExperience, Tag
-from .serializers import ProjectSerializer, CertificationSerializer, PostSerializer, WorkExperienceSerializer, TagSerializer
+from .models import Project, Certification, Post, WorkExperience, Tag, ContactSubmission
+from .serializers import ProjectSerializer, CertificationSerializer, PostSerializer, WorkExperienceSerializer, TagSerializer, ContactSubmissionSerializer
 
 # --- Configuration Constants ---
 GITHUB_USERNAME = "maximotodev"
@@ -569,3 +570,79 @@ def career_chat(request):
             except Exception as e: context = f"Error during context retrieval: {e}"
 
     return StreamingHttpResponse(stream_llm_response(user_question, context, chat_history), content_type="text/event-stream")
+# This throttle limits anonymous (unauthenticated) users to 5 requests per day from a single IP.
+class ContactFormThrottle(AnonRateThrottle):
+    rate = '5/day'
+@api_view(['POST'])
+@throttle_classes([ContactFormThrottle])
+def contact_form_submit(request):
+    """
+    Handles the submission of the contact form, validates data,
+    and saves it to the database.
+    """
+    serializer = ContactSubmissionSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({"success": "Message received. Thank you!"}, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# --- NEW: Nostr Contact Form View ---
+@api_view(['POST'])
+@throttle_classes([ContactFormThrottle]) # We can reuse the same rate limiting
+def nostr_contact_submit(request):
+    """
+    Handles form submission and sends an encrypted Nostr DM.
+    """
+    bot_nsec = os.getenv('NOSTR_BOT_NSEC')
+    my_npub = os.getenv('NOSTR_NPUB')
+
+    if not bot_nsec or not my_npub:
+        return Response({"error": "Nostr backend is not configured."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    serializer = ContactSubmissionSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    data = serializer.validated_data
+    cleartext_content = (
+        f"New message from portfolio contact form:\n\n"
+        f"From: {data['name']} ({data['email']})\n"
+        f"Subject: {data['subject']}\n\n"
+        f"Message:\n{data['message']}"
+    )
+
+    try:
+        # Load keys
+        bot_private_key = PrivateKey.from_nsec(bot_nsec)
+        my_public_key = PublicKey.from_npub(my_npub)
+
+        # 1. Encrypt the message content FIRST using the PrivateKey object.
+        encrypted_content = bot_private_key.encrypt_message(
+            cleartext_content,
+            my_public_key.hex()
+        )
+
+        # 2. Create the Event with the *already encrypted* content.
+        dm_event = Event(
+            pubkey=bot_private_key.public_key.hex(),
+            kind=EventKind.ENCRYPTED_DIRECT_MESSAGE,
+            content=encrypted_content,
+            tags=[['p', my_public_key.hex()]]
+        )
+        
+        # 3. Sign the event with the bot's private key.
+        dm_event.sign(bot_private_key.hex())
+
+        # 4. Publish to relays.
+        relay_manager = RelayManager(timeout=4) # Increased timeout slightly for reliability
+        relay_manager.add_relay("wss://relay.damus.io")
+        relay_manager.add_relay("wss://relay.primal.net")
+        relay_manager.add_relay("wss://nos.lol")
+        relay_manager.publish_event(dm_event)
+        relay_manager.close_all_relay_connections()
+
+        return Response({"success": "Encrypted message sent via Nostr!"}, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        # This will now catch any other potential errors in the new flow
+        print(f"NOSTR DM ERROR: {e}")
+        return Response({"error": "Failed to send message via Nostr."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

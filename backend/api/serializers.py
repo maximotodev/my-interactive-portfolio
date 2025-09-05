@@ -1,6 +1,6 @@
 # backend/api/serializers.py
 from rest_framework import serializers
-from .models import Project, Certification, Post, WorkExperience, Tag
+from .models import ContactSubmission, Project, Certification, Post, WorkExperience, Tag
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -31,3 +31,8 @@ class PostSerializer(serializers.ModelSerializer):
         model = Post
         fields = '__all__'
         lookup_field = 'slug'
+
+class ContactSubmissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactSubmission
+        fields = ['name', 'email', 'subject', 'message'] # Only these fields are needed from the user

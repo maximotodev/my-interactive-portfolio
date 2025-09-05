@@ -16,6 +16,8 @@ from .views import (
     skill_match_view,
     career_chat,
     search_view,
+    contact_form_submit,
+    nostr_contact_submit,
 )
 
 router = DefaultRouter()
@@ -35,5 +37,9 @@ urlpatterns = [
     path('mempool-stats/', mempool_stats, name='mempool-stats'),
     path('bitcoin-address/', bitcoin_address, name='bitcoin-address'),
     path('skill-match/', skill_match_view, name='skill-match'),
-    path('chat/', career_chat, name='career-chat'),    
+    path('chat/', career_chat, name='career-chat'),  
+    path('contact/', contact_form_submit, name='contact-submit'),
+    path('nostr-contact/', nostr_contact_submit, name='nostr-contact-submit'),
+
+  
 ]
