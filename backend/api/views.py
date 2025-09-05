@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 
 # Django & DRF Imports
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
+from django.conf import settings
 from django.core.cache import cache
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
@@ -509,7 +510,7 @@ def stream_llm_response(user_question, context, chat_history):
         
         stream = client.chat.completions.create(
             messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-            model="llama3-70b-8192",
+            model=settings.GROQ_MODEL_NAME,
             stream=True,
         )
         for chunk in stream:
@@ -517,6 +518,7 @@ def stream_llm_response(user_question, context, chat_history):
             if content: yield content
             
     except Exception as e:
+        print(f"!!! GROQ API ERROR !!!: {e}") 
         yield "{\"error\": \"I'm sorry, but the AI model is currently experiencing issues.\"}"
 
 
