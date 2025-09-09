@@ -585,12 +585,12 @@ def contact_form_submit(request):
         serializer.save()
         return Response({"success": "Message received. Thank you!"}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-# --- NEW: Nostr Contact Form View ---
 @api_view(['POST'])
-@throttle_classes([ContactFormThrottle]) # We can reuse the same rate limiting
+@throttle_classes([ContactFormThrottle])
 def nostr_contact_submit(request):
     """
-    Handles form submission and sends an encrypted Nostr DM.
+    Handles form submission and sends an encrypted Nostr DM with a robust,
+    feedback-oriented publishing strategy using run_sync().
     """
     bot_nsec = os.getenv('NOSTR_BOT_NSEC')
     my_npub = os.getenv('NOSTR_NPUB')
@@ -611,17 +611,14 @@ def nostr_contact_submit(request):
     )
 
     try:
-        # Load keys
         bot_private_key = PrivateKey.from_nsec(bot_nsec)
         my_public_key = PublicKey.from_npub(my_npub)
 
-        # 1. Encrypt the message content FIRST using the PrivateKey object.
         encrypted_content = bot_private_key.encrypt_message(
             cleartext_content,
             my_public_key.hex()
         )
 
-        # 2. Create the Event with the *already encrypted* content.
         dm_event = Event(
             pubkey=bot_private_key.public_key.hex(),
             kind=EventKind.ENCRYPTED_DIRECT_MESSAGE,
@@ -629,20 +626,43 @@ def nostr_contact_submit(request):
             tags=[['p', my_public_key.hex()]]
         )
         
-        # 3. Sign the event with the bot's private key.
         dm_event.sign(bot_private_key.hex())
 
-        # 4. Publish to relays.
-        relay_manager = RelayManager(timeout=4) # Increased timeout slightly for reliability
+        # --- THIS IS THE DEFINITIVE FIX ---
+
+        # 1. Use a more generous timeout for the entire operation.
+        relay_manager = RelayManager(timeout=8)
         relay_manager.add_relay("wss://relay.damus.io")
         relay_manager.add_relay("wss://relay.primal.net")
         relay_manager.add_relay("wss://nos.lol")
+        relay_manager.add_relay("wss://relay.nostr.band")
+        
+        # 2. Publish the event. This queues it to be sent.
         relay_manager.publish_event(dm_event)
+        print("NOSTR DM: Event published to relays. Now waiting for OK notices...")
+
+        # 3. CRITICAL FIX: Use run_sync() to open connections, send the queued
+        # event, and actively LISTEN for responses for a few seconds.
+        relay_manager.run_sync()
+
+        # 4. Now that we have waited and listened, check the message pool.
+        events_accepted = 0
+        while relay_manager.message_pool.has_ok_notices():
+            ok_msg = relay_manager.message_pool.get_ok_notice()
+            if ok_msg.ok:
+                events_accepted += 1
+                # The log message is now more accurate
+                print(f"NOSTR DM PUBLISH: OK notice received from {ok_msg.url}")
+
         relay_manager.close_all_relay_connections()
 
-        return Response({"success": "Encrypted message sent via Nostr!"}, status=status.HTTP_200_OK)
+        if events_accepted > 0:
+            print(f"NOSTR DM SUCCESS: Message accepted by {events_accepted} relay(s).")
+            return Response({"success": "Encrypted message sent via Nostr!"}, status=status.HTTP_200_OK)
+        else:
+            print("NOSTR DM FAILURE: Message was published, but no confirmation was received from any relays.")
+            return Response({"error": "Message was sent but not confirmed by any Nostr relays."}, status=status.HTTP_502_BAD_GATEWAY)
 
     except Exception as e:
-        # This will now catch any other potential errors in the new flow
-        print(f"NOSTR DM ERROR: {e}")
-        return Response({"error": "Failed to send message via Nostr."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        print(f"NOSTR DM CRITICAL ERROR: {e}")
+        return Response({"error": "A critical error occurred while sending the Nostr message."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
