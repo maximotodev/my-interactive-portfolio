@@ -56,7 +56,7 @@ const LatestNostrNote = () => {
       </h3>
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 ring-1 ring-black/5 dark:ring-white/10">
         <blockquote className="border-l-4 border-purple-500 pl-4">
-          <p className="text-lg italic text-gray-700 dark:text-gray-200">
+          <p className="text-lg italic text-gray-700 dark:text-gray-200 break-words">
             {note.content}
           </p>
         </blockquote>
