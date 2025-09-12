@@ -1,4 +1,3 @@
-// frontend/src/pages/BlogList.jsx
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { fetchPosts } from "../api";
@@ -9,21 +8,45 @@ const BlogList = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Using an AbortController for safe cleanup
+    const abortController = new AbortController();
+
     const getPosts = async () => {
       try {
-        // Use the imported function directly
-        const { data } = await fetchPosts();
-        setPosts(data);
+        const { data } = await fetchPosts({ signal: abortController.signal });
+
+        // --- THIS IS THE DEFINITIVE FIX ---
+        // We now correctly handle the paginated API response.
+        if (data && Array.isArray(data.results)) {
+          setPosts(data.results);
+        } else if (Array.isArray(data)) {
+          // Fallback for non-paginated responses
+          setPosts(data);
+        } else {
+          console.error("Unexpected API response structure for posts:", data);
+          setPosts([]);
+        }
       } catch (error) {
-        console.error("Failed to fetch posts:", error);
+        if (error.name !== "CanceledError") {
+          console.error("Failed to fetch posts:", error);
+          setPosts([]);
+        }
       } finally {
-        setIsLoading(false);
+        if (!abortController.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
     getPosts();
+
+    return () => {
+      abortController.abort();
+    };
   }, []);
 
-  if (isLoading) return <p>Loading articles...</p>;
+  if (isLoading) {
+    return <p className="text-center mt-12">Loading articles...</p>;
+  }
 
   return (
     <FadeIn>
@@ -36,7 +59,7 @@ const BlogList = () => {
             <Link
               to={`/blog/${post.slug}`}
               key={post.slug}
-              className="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl dark:ring-1 dark:ring-white/10 dark:hover:bg-gray-700"
+              className="block p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-xl dark:ring-1 dark:ring-white/10 dark:hover:bg-gray-700 transition-all duration-300"
             >
               <h2 className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                 {post.title}

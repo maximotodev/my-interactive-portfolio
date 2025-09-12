@@ -1,4 +1,3 @@
-// frontend/src/components/ProjectList.jsx
 import React, { useState, useEffect } from "react";
 import { fetchProjects } from "../api";
 import FadeIn from "./FadeIn";
@@ -9,19 +8,48 @@ const ProjectList = ({ selectedTag, onTagSelect, onClearFilter }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Using an AbortController for safe cleanup
+    const abortController = new AbortController();
+
     const getProjects = async () => {
       setIsLoading(true);
       try {
-        const { data } = await fetchProjects(selectedTag?.slug);
-        setProjects(data);
+        // Pass the tag's slug and the abort signal to the API call
+        const { data } = await fetchProjects(selectedTag?.slug, {
+          signal: abortController.signal,
+        });
+
+        // --- THIS IS THE DEFINITIVE FIX ---
+        // We now correctly handle the paginated API response.
+        if (data && Array.isArray(data.results)) {
+          setProjects(data.results);
+        } else if (Array.isArray(data)) {
+          // Fallback for non-paginated responses
+          setProjects(data);
+        } else {
+          console.error(
+            "Unexpected API response structure for projects:",
+            data
+          );
+          setProjects([]);
+        }
       } catch (error) {
-        console.error("Failed to fetch projects:", error);
+        if (error.name !== "CanceledError") {
+          console.error("Failed to fetch projects:", error);
+          setProjects([]);
+        }
       } finally {
-        setIsLoading(false);
+        if (!abortController.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     };
     getProjects();
-  }, [selectedTag]);
+
+    return () => {
+      abortController.abort();
+    };
+  }, [selectedTag]); // Re-run whenever selectedTag changes
 
   if (isLoading) {
     return <ProjectListSkeleton />;
@@ -61,9 +89,6 @@ const ProjectList = ({ selectedTag, onTagSelect, onClearFilter }) => {
                 <p className="text-gray-700 dark:text-gray-300 mt-2 h-24 overflow-y-auto">
                   {project.description}
                 </p>
-
-                {/* --- THIS IS THE REFACTORED UI --- */}
-                {/* We now map over the 'tags' array to render clickable pills */}
                 {project.tags && project.tags.length > 0 && (
                   <div className="mt-4">
                     <h4 className="text-sm font-bold text-gray-600 dark:text-gray-400 mb-2">
@@ -82,7 +107,6 @@ const ProjectList = ({ selectedTag, onTagSelect, onClearFilter }) => {
                     </div>
                   </div>
                 )}
-
                 <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 space-x-4">
                   <a
                     href={project.repository_url}
@@ -103,7 +127,6 @@ const ProjectList = ({ selectedTag, onTagSelect, onClearFilter }) => {
         ))}
       </div>
 
-      {/* --- NEW: Handle case where no projects match the filter --- */}
       {!isLoading && projects.length === 0 && (
         <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-lg">
           <p className="text-xl text-gray-800 dark:text-gray-300">
