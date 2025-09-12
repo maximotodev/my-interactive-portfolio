@@ -70,3 +70,5 @@ urllib3==2.5.0
 websocket-client==1.8.0
 whitenoise==6.9.0
 django-redis==5.4.0
+pydantic==2.8.2
+django-filter==24.2

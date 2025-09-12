@@ -1,11 +1,14 @@
 # backend/api/admin.py
 from django.contrib import admin
-from .models import ContactSubmission, Project, Certification, Post, WorkExperience, Tag
+# --- UPDATED IMPORTS ---
+from .models import (
+    ContactSubmission, Project, Certification, Post, 
+    WorkExperience, Tag, Stall, Product
+)
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug')
-    # This will automatically create the URL-friendly slug from the name field
     prepopulated_fields = {'slug': ('name',)}
 
 @admin.register(WorkExperience)
@@ -17,7 +20,6 @@ class ProjectAdmin(admin.ModelAdmin):
     list_display = ('title', 'repository_url', 'live_url')
     search_fields = ('title', 'description', 'tags__name')
     filter_horizontal = ('tags',)
-
 
 @admin.register(Certification)
 class CertificationAdmin(admin.ModelAdmin):
@@ -37,5 +39,19 @@ class ContactSubmissionAdmin(admin.ModelAdmin):
     list_display = ('name', 'email', 'subject', 'created_at')
     list_filter = ('created_at',)
     search_fields = ('name', 'email', 'subject', 'message')
-    # Make the message content read-only in the admin list view
     readonly_fields = ('name', 'email', 'subject', 'message', 'created_at')
+
+# --- NEW: Register Stall and Product Models ---
+@admin.register(Stall)
+class StallAdmin(admin.ModelAdmin):
+    list_display = ('name', 'merchant_pubkey', 'currency', 'created_at')
+    search_fields = ('name', 'description', 'merchant_pubkey')
+    list_filter = ('currency', 'created_at')
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ('name', 'stall', 'price', 'currency', 'merchant_pubkey', 'created_at')
+    search_fields = ('name', 'description', 'merchant_pubkey')
+    list_filter = ('currency', 'created_at')
+
+# --- REMOVED: The old ListingAdmin class ---

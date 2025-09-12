@@ -9,7 +9,9 @@ from datetime import datetime, timedelta
 from django.contrib.postgres.search import SearchVector, SearchQuery, SearchRank
 from django.conf import settings
 from django.core.cache import cache
-from rest_framework import viewsets, status
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework import viewsets, status, pagination
 from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.response import Response
@@ -25,8 +27,8 @@ from groq import Groq
 
 # Local Imports
 # --- IMPORT ALL YOUR MODELS ---
-from .models import Project, Certification, Post, WorkExperience, Tag, ContactSubmission
-from .serializers import ProjectSerializer, CertificationSerializer, PostSerializer, WorkExperienceSerializer, TagSerializer, ContactSubmissionSerializer
+from .models import Project, Certification, Post, WorkExperience, Tag, ContactSubmission, Stall, Product
+from .serializers import ProjectSerializer, CertificationSerializer, PostSerializer, WorkExperienceSerializer, TagSerializer, ContactSubmissionSerializer, StallSerializer, ProductSerializer 
 
 # --- Configuration Constants ---
 GITHUB_USERNAME = "maximotodev"
@@ -37,7 +39,6 @@ HUGGINGFACE_EMBEDDING_MODEL_URL = "https://api-inference.huggingface.co/models/s
 
 # ==============================================================================
 # HELPER & SERVICE FUNCTIONS # ==============================================================================
-
 def decode_npub(npub: str) -> str | None:
     """Decodes an 'npub' to hex using pynostr's PublicKey class."""
     try:
@@ -45,20 +46,22 @@ def decode_npub(npub: str) -> str | None:
         return public_key.hex()
     except Exception:
         return None
-
-def fetch_nostr_profile_data():
-    """Fetches the latest profile (kind 0) from Nostr relays."""
-    npub = os.getenv('NOSTR_NPUB')
-    if not npub: return None
-    hex_pubkey = decode_npub(npub)
-    if not hex_pubkey: return None
+    
+def fetch_nostr_profile_from_relays(hex_pubkey: str):
+    """
+    A clean, reusable function that fetches a single Nostr profile
+    from a given hex public key.
+    """
+    if not hex_pubkey:
+        return None
 
     relay_manager = RelayManager(timeout=6)
-    for relay in NOSTR_RELAYS:
-        relay_manager.add_relay(relay)
-    
+    relay_manager.add_relay("wss://relay.damus.io")
+    relay_manager.add_relay("wss://relay.primal.net")
+    relay_manager.add_relay("wss://nos.lol")
+
     filters = FiltersList([Filters(authors=[hex_pubkey], kinds=[EventKind.SET_METADATA], limit=1)])
-    subscription_id = "profile_sub"
+    subscription_id = f"profile_{hex_pubkey[:10]}"
     relay_manager.add_subscription_on_all_relays(subscription_id, filters)
     
     profile_data = None
@@ -73,6 +76,7 @@ def fetch_nostr_profile_data():
             profile_data = json.loads(latest_event.content)
     finally:
         relay_manager.close_all_relay_connections()
+    
     return profile_data
 
 def fetch_latest_nostr_note():
@@ -208,11 +212,10 @@ def fetch_mempool_data():
 # ==============================================================================
 # API VIEWS
 # ==============================================================================
+
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    A viewset for listing all available tags.
-    """
-    queryset = Tag.objects.all()
+    """ A viewset for listing all available tags, ordered by name. """
+    queryset = Tag.objects.all().order_by('name') # Add default ordering
     serializer_class = TagSerializer
 
 
@@ -255,6 +258,23 @@ class PostViewSet(viewsets.ReadOnlyModelViewSet):
         if tag_slug:
             queryset = queryset.filter(tags__slug=tag_slug)
         return queryset
+class StallViewSet(viewsets.ReadOnlyModelViewSet):
+    """ API endpoint for NIP-15 Stalls. """
+    queryset = Stall.objects.all()
+    serializer_class = StallSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['merchant_pubkey']
+
+class ProductViewSet(viewsets.ReadOnlyModelViewSet):
+    """ API endpoint for NIP-15 Products. """
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['stall__id', 'merchant_pubkey']
+    search_fields = ['name', 'description', 'tags']
+    ordering_fields = ['created_at', 'price']
+    ordering = ['-created_at']
+
     
 # --- NEW: NATIVE Full-Text Search API View ---
 @api_view(['GET'])
@@ -309,17 +329,21 @@ def bitcoin_address(request):
 
 @api_view(['GET'])
 def nostr_profile(request):
-    npub = os.getenv('NOSTR_NPUB')
-    if not npub: return Response({'error': 'Nostr npub not configured.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    cache_key = f"nostr_profile_{npub}"
+    pubkey_hex = request.query_params.get('pubkey')
+    if not pubkey_hex:
+        npub = os.getenv('NOSTR_NPUB')
+        if not npub: return Response({'error': 'Nostr npub not configured for owner.'}, status=500)
+        pubkey_hex = decode_npub(npub)
+    if not pubkey_hex: return Response({'error': 'Invalid or missing pubkey.'}, status=400)
+    cache_key = f"nostr_profile_{pubkey_hex}"
     cached_data = cache.get(cache_key)
     if cached_data: return Response(cached_data)
-    profile_data = fetch_nostr_profile_data()
+    profile_data = fetch_nostr_profile_from_relays(pubkey_hex)
     if profile_data:
-        profile_data['npub'] = npub
+        profile_data['npub'] = PublicKey(bytes.fromhex(pubkey_hex)).bech32()
         cache.set(cache_key, profile_data, timeout=CACHE_TIMEOUT_SECONDS)
         return Response(profile_data)
-    return Response({'error': 'Nostr profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+    return Response({'error': 'Nostr profile not found.'}, status=404)
 
 @api_view(['GET'])
 def latest_note(request):

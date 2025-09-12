@@ -80,3 +80,51 @@ class ContactSubmission(models.Model):
 
     def __str__(self):
         return f"Message from {self.name} ({self.email}) re: {self.subject}"
+
+class Stall(models.Model):
+    id = models.CharField(max_length=100, primary_key=True)
+    merchant_pubkey = models.CharField(max_length=64, db_index=True)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    currency = models.CharField(max_length=10)
+    shipping_zones = models.JSONField(default=list)
+    created_at = models.DateTimeField()
+
+    def __str__(self):
+        return self.name
+
+class Product(models.Model):
+    id = models.CharField(max_length=100, primary_key=True)
+    stall = models.ForeignKey(Stall, on_delete=models.CASCADE, related_name='products')
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    images = models.JSONField(default=list)
+    currency = models.CharField(max_length=10)
+    price = models.FloatField()
+    quantity = models.IntegerField(null=True, blank=True)
+    specs = models.JSONField(default=list)
+    shipping = models.JSONField(default=list)
+    tags = models.JSONField(default=list) # To store 't' tags from the event
+    event_id = models.CharField(max_length=64, unique=True, db_index=True) # To store the latest event hash
+    merchant_pubkey = models.CharField(max_length=64, db_index=True)
+    created_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return self.name
+# class Listing(models.Model):
+#     event_id = models.CharField(max_length=64, unique=True, db_index=True)
+#     seller_pubkey = models.CharField(max_length=64, db_index=True)
+#     title = models.CharField(max_length=255)
+#     description = models.TextField(blank=True, null=True)
+#     price_sats = models.BigIntegerField(blank=True, null=True)
+#     image_url = models.URLField(max_length=1024, blank=True, null=True)
+#     created_at = models.DateTimeField()
+
+#     class Meta:
+#         ordering = ['-created_at']
+
+#     def __str__(self):
+#         return self.title

@@ -106,6 +106,7 @@ INSTALLED_APPS = [
     'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_filters',
     'corsheaders',
     'api',
 ]
@@ -176,3 +177,13 @@ USE_TZ = True
 # ==============================================================================
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# ==============================================================================
+# DJANGO REST FRAMEWORK CONFIGURATION
+# ==============================================================================
+
+REST_FRAMEWORK = {
+    # Use Django's standard `PageNumberPagination` class.
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    # Set the default number of items to return per page.
+    'PAGE_SIZE': 12  # A good number for a 3-column grid layout
+}
